@@ -8,9 +8,6 @@ const nextConfig = {
       { protocol: "https", hostname: "dmxg5wxfqgb4u.cloudfront.net" },
     ],
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: true,
   },
