@@ -126,6 +126,7 @@ export function getFightersByWeightClass(weightClass: string): Fighter[] {
 export default function SyncPage() {
   const [status, setStatus] = useState('');
   const [fighters, setFighters] = useState<Fighter[]>([]);
+  const [fileContent, setFileContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -133,39 +134,19 @@ export default function SyncPage() {
     setLoading(true);
     setDone(false);
     setFighters([]);
+    setStatus('Fetching fighters from ESPN via server...');
 
     try {
-      const all: Fighter[] = [];
-      let page = 1;
+      const res = await fetch('/api/admin/sync-fighters');
+      const data = await res.json();
 
-      while (true) {
-        setStatus(`Fetching page ${page}...`);
-        const res = await fetch(
-          `https://site.api.espn.com/apis/site/v2/sports/mma/ufc/athletes?limit=100&page=${page}&active=true`,
-          { headers: { Accept: 'application/json' } }
-        );
-
-        if (!res.ok) throw new Error(`ESPN returned ${res.status}`);
-        const data = await res.json();
-        const athletes = data.athletes || [];
-        if (athletes.length === 0) break;
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        athletes.forEach((a: any, i: number) => {
-          try {
-            all.push(buildFighter(a, all.length + i, 600));
-          } catch {}
-        });
-
-        setStatus(`Fetched ${all.length} fighters so far...`);
-        if (athletes.length < 100) break;
-        page++;
-        await new Promise((r) => setTimeout(r, 200));
+      if (!res.ok || data.error) {
+        throw new Error(data.error || `Server error ${res.status}`);
       }
 
-      if (all.length === 0) throw new Error('No fighters returned');
-      setFighters(all);
-      setStatus(`✅ Got ${all.length} fighters! Click Download to save the file.`);
+      setFighters(data.fighters);
+      setFileContent(data.fileContent);
+      setStatus(`✅ Got ${data.count} fighters! Click Download to save the file.`);
       setDone(true);
     } catch (err) {
       setStatus(`❌ Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -175,7 +156,7 @@ export default function SyncPage() {
   }
 
   function download() {
-    const content = generateTs(fighters);
+    const content = fileContent || generateTs(fighters);
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
