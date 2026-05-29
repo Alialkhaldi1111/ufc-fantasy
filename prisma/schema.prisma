@@ -1,0 +1,429 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  PREMIUM
+  ADMIN
+}
+
+enum ContestType {
+  PUBLIC
+  PRIVATE
+  TOURNAMENT
+  HEAD_TO_HEAD
+}
+
+enum ContestStatus {
+  UPCOMING
+  OPEN
+  LOCKED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum EventStatus {
+  UPCOMING
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum FightResult {
+  WIN
+  LOSS
+  DRAW
+  NO_CONTEST
+}
+
+enum FinishMethod {
+  KO_TKO
+  SUBMISSION
+  DECISION_UNANIMOUS
+  DECISION_SPLIT
+  DECISION_MAJORITY
+  NO_CONTEST
+  DQ
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  CONTEST_ENTRY
+  CONTEST_WIN
+  SUBSCRIPTION
+  REFUND
+  BONUS
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+  TRIALING
+}
+
+model User {
+  id                 String             @id @default(cuid())
+  clerkId            String?            @unique
+  email              String             @unique
+  username           String             @unique
+  displayName        String
+  avatar             String?
+  bio                String?
+  role               UserRole           @default(USER)
+  xp                 Int                @default(0)
+  level              Int                @default(1)
+  rank               String             @default("Rookie")
+  streakDays         Int                @default(0)
+  lastActiveAt       DateTime           @default(now())
+  referralCode       String             @unique @default(cuid())
+  referredBy         String?
+  balance            Decimal            @default(0) @db.Decimal(10, 2)
+  totalWinnings      Decimal            @default(0) @db.Decimal(10, 2)
+  totalContests      Int                @default(0)
+  contestWins        Int                @default(0)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  lineups            Lineup[]
+  transactions       Transaction[]
+  subscription       Subscription?
+  notifications      Notification[]
+  achievements       UserAchievement[]
+  sentFriendships    Friendship[]       @relation("FriendshipSender")
+  recvFriendships    Friendship[]       @relation("FriendshipReceiver")
+  sentMessages       ChatMessage[]      @relation("MessageSender")
+  leaderboardEntries LeaderboardEntry[]
+  contestEntries     ContestEntry[]
+  createdContests    Contest[]          @relation("ContestCreator")
+
+  @@index([email])
+  @@index([username])
+}
+
+model Fighter {
+  id                  String       @id @default(cuid())
+  name                String
+  nickname            String?
+  nationality         String       @default("USA")
+  countryFlag         String       @default("🇺🇸")
+  weightClass         String
+  record              String
+  wins                Int          @default(0)
+  losses              Int          @default(0)
+  draws               Int          @default(0)
+  height              String
+  weight              String
+  reach               String?
+  stance              String       @default("Orthodox")
+  age                 Int?
+  imageUrl            String?
+  salary              Int
+  projectedPoints     Float        @default(0)
+  avgFantasyPoints    Float        @default(0)
+  ownership           Float        @default(0)
+  knockoutPct         Float        @default(0)
+  submissionPct       Float        @default(0)
+  decisionPct         Float        @default(0)
+  strikeAccuracy      Float        @default(0)
+  strikeDefense       Float        @default(0)
+  takedownAccuracy    Float        @default(0)
+  takedownDefense     Float        @default(0)
+  significantStrikes  Float        @default(0)
+  takedownsPerFight   Float        @default(0)
+  isActive            Boolean      @default(true)
+  ranking             Int?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  fightA              Fight[]      @relation("FighterA")
+  fightB              Fight[]      @relation("FighterB")
+  lineupSlots         LineupSlot[]
+  fantasyScores       FantasyScore[]
+}
+
+model Event {
+  id            String      @id @default(cuid())
+  name          String
+  shortName     String?
+  venue         String
+  city          String
+  country       String      @default("USA")
+  date          DateTime
+  status        EventStatus @default(UPCOMING)
+  imageUrl      String?
+  broadcasters  String[]    @default([])
+  mainCardTime  String?
+  prelimTime    String?
+  description   String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  fights        Fight[]
+  contests      Contest[]
+}
+
+model Fight {
+  id                String       @id @default(cuid())
+  eventId           String
+  fighterAId        String
+  fighterBId        String
+  weightClass       String
+  isMainEvent       Boolean      @default(false)
+  isCoMain          Boolean      @default(false)
+  isTitleFight      Boolean      @default(false)
+  scheduledRounds   Int          @default(3)
+  cardPosition      Int          @default(0)
+  cardType          String       @default("main")
+  status            String       @default("scheduled")
+
+  result            FightResult?
+  winnerId          String?
+  finishMethod      FinishMethod?
+  finishRound       Int?
+  finishTime        String?
+
+  fighterAStrikes   Int          @default(0)
+  fighterBStrikes   Int          @default(0)
+  fighterATakedowns Int          @default(0)
+  fighterBTakedowns Int          @default(0)
+  fighterAKnockdowns Int         @default(0)
+  fighterBKnockdowns Int         @default(0)
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  event             Event        @relation(fields: [eventId], references: [id])
+  fighterA          Fighter      @relation("FighterA", fields: [fighterAId], references: [id])
+  fighterB          Fighter      @relation("FighterB", fields: [fighterBId], references: [id])
+  fantasyScores     FantasyScore[]
+
+  @@index([eventId])
+}
+
+model Contest {
+  id                  String        @id @default(cuid())
+  eventId             String
+  creatorId           String
+  name                String
+  type                ContestType   @default(PUBLIC)
+  status              ContestStatus @default(UPCOMING)
+  entryFee            Decimal       @default(0) @db.Decimal(10, 2)
+  prizePool           Decimal       @default(0) @db.Decimal(10, 2)
+  maxEntries          Int           @default(100)
+  currentEntries      Int           @default(0)
+  salaryCap           Int           @default(50000)
+  rosterSize          Int           @default(6)
+  inviteCode          String?       @unique
+  isGuaranteed        Boolean       @default(false)
+  multiEntry          Boolean       @default(false)
+  maxEntriesPerUser   Int           @default(1)
+  payoutStructure     Json?
+  rules               String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  event               Event         @relation(fields: [eventId], references: [id])
+  creator             User          @relation("ContestCreator", fields: [creatorId], references: [id])
+  entries             ContestEntry[]
+  leaderboard         LeaderboardEntry[]
+}
+
+model ContestEntry {
+  id          String    @id @default(cuid())
+  contestId   String
+  userId      String
+  lineupId    String    @unique
+  totalPoints Float     @default(0)
+  rank        Int?
+  prize       Decimal?  @db.Decimal(10, 2)
+  createdAt   DateTime  @default(now())
+
+  contest     Contest   @relation(fields: [contestId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+  lineup      Lineup    @relation(fields: [lineupId], references: [id])
+
+  @@unique([contestId, userId])
+  @@index([contestId])
+}
+
+model Lineup {
+  id           String       @id @default(cuid())
+  userId       String
+  contestId    String?
+  name         String       @default("My Lineup")
+  totalSalary  Int          @default(0)
+  totalPoints  Float        @default(0)
+  isSubmitted  Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id])
+  slots        LineupSlot[]
+  contestEntry ContestEntry?
+
+  @@index([userId])
+}
+
+model LineupSlot {
+  id        String  @id @default(cuid())
+  lineupId  String
+  fighterId String
+  slot      Int
+
+  lineup    Lineup  @relation(fields: [lineupId], references: [id])
+  fighter   Fighter @relation(fields: [fighterId], references: [id])
+
+  @@unique([lineupId, slot])
+}
+
+model FantasyScore {
+  id                 String   @id @default(cuid())
+  fighterId          String
+  fightId            String
+  winPoints          Float    @default(0)
+  koTkoPoints        Float    @default(0)
+  submissionPoints   Float    @default(0)
+  strikingPoints     Float    @default(0)
+  takedownPoints     Float    @default(0)
+  knockdownPoints    Float    @default(0)
+  controlTimePoints  Float    @default(0)
+  firstRoundBonus    Float    @default(0)
+  upsetBonus         Float    @default(0)
+  totalPoints        Float    @default(0)
+  significantStrikes Int      @default(0)
+  takedowns          Int      @default(0)
+  knockdowns         Int      @default(0)
+  controlTimeSeconds Int      @default(0)
+  createdAt          DateTime @default(now())
+
+  fighter            Fighter  @relation(fields: [fighterId], references: [id])
+  fight              Fight    @relation(fields: [fightId], references: [id])
+
+  @@unique([fighterId, fightId])
+}
+
+model Transaction {
+  id          String          @id @default(cuid())
+  userId      String
+  type        TransactionType
+  amount      Decimal         @db.Decimal(10, 2)
+  description String?
+  stripeId    String?
+  contestId   String?
+  status      String          @default("completed")
+  createdAt   DateTime        @default(now())
+
+  user        User            @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String             @unique
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?            @unique
+  plan                 String             @default("free")
+  status               SubscriptionStatus @default(TRIALING)
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user                 User               @relation(fields: [userId], references: [id])
+}
+
+model LeaderboardEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  contestId String?
+  season    String   @default("2025")
+  points    Float    @default(0)
+  rank      Int?
+  wins      Int      @default(0)
+  roi       Float    @default(0)
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id])
+  contest   Contest? @relation(fields: [contestId], references: [id])
+
+  @@unique([userId, contestId, season])
+  @@index([season, points])
+}
+
+model Achievement {
+  id          String            @id @default(cuid())
+  name        String
+  description String
+  icon        String
+  xpReward    Int               @default(0)
+  rarity      String            @default("common")
+  category    String            @default("general")
+  createdAt   DateTime          @default(now())
+
+  userAchievements UserAchievement[]
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  achievementId String
+  earnedAt      DateTime    @default(now())
+
+  user          User        @relation(fields: [userId], references: [id])
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  type      String   @default("info")
+  read      Boolean  @default(false)
+  link      String?
+  data      Json?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, read])
+}
+
+model Friendship {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  status     String   @default("pending")
+  createdAt  DateTime @default(now())
+
+  sender     User     @relation("FriendshipSender", fields: [senderId], references: [id])
+  receiver   User     @relation("FriendshipReceiver", fields: [receiverId], references: [id])
+
+  @@unique([senderId, receiverId])
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  senderId  String
+  contestId String?
+  content   String
+  type      String   @default("text")
+  createdAt DateTime @default(now())
+
+  sender    User     @relation("MessageSender", fields: [senderId], references: [id])
+
+  @@index([contestId])
+}
