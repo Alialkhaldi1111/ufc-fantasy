@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { events } from '@/data/events';
+import { getEvents } from '@/lib/data';
 import { Event } from '@/types';
 
 export async function GET(request: NextRequest) {
@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') as Event['status'] | null;
 
+    const events = await getEvents();
     let results = [...events];
 
     if (status) {

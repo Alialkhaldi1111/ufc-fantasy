@@ -7,6 +7,7 @@ import { fighters } from '@/data/fighters';
 import { useLineupStore } from '@/store/useLineupStore';
 import type { Fighter } from '@/types';
 import { formatSalary, cn } from '@/lib/utils';
+import { hapticTap, hapticSuccess, hapticError } from '@/lib/native';
 
 const WEIGHT_CLASSES = ['All', 'HW', 'LHW', 'MW', 'WW', 'LW', 'FW', 'BW', 'FLW', 'W-SW', 'W-FLW'];
 
@@ -41,8 +42,18 @@ export default function LineupPage() {
 
   function handleSubmit() {
     if (!isValid) return;
+    hapticSuccess();
     setSubmitted(true);
     setTimeout(() => setSubmitted(false), 3000);
+  }
+
+  function handleAdd(fighter: Fighter, canAdd: boolean) {
+    if (canAdd) {
+      hapticTap();
+      addFighter(fighter);
+    } else {
+      hapticError();
+    }
   }
 
   return (
@@ -262,7 +273,7 @@ export default function LineupPage() {
                   {/* Action */}
                   <motion.button
                     whileTap={{ scale: 0.9 }}
-                    onClick={() => selected ? removeFighter(fighter.id) : canAdd ? addFighter(fighter) : undefined}
+                    onClick={() => selected ? removeFighter(fighter.id) : handleAdd(fighter, canAdd)}
                     className={cn(
                       "w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
                       selected

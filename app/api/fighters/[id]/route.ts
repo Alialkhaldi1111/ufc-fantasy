@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fighters } from '@/data/fighters';
+import { getFighter } from '@/lib/data';
 
 export async function GET(
   _request: NextRequest,
@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const fighter = fighters.find((f) => f.id === id);
+    const fighter = await getFighter(id);
 
     if (!fighter) {
       return NextResponse.json({ error: 'Fighter not found' }, { status: 404 });

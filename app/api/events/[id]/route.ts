@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { events } from '@/data/events';
+import { getEvent } from '@/lib/data';
 
 export async function GET(
   _request: NextRequest,
@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const event = events.find((e) => e.id === id);
+    const event = await getEvent(id);
 
     if (!event) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
