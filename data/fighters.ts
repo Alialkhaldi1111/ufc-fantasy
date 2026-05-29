@@ -61,6 +61,17 @@ export const fighters: Fighter[] = [
     perFightStats: { sigStrikes: 60, takedowns: 5.0, knockdowns: 0.6, submissionAttempts: 0.3 },
   },
   {
+    id: 'stipe-miocic', name: 'Stipe Miocic', nickname: '',
+    nationality: 'American', countryFlag: '🇺🇸', weightClass: 'Heavyweight',
+    record: '20-4-0', wins: 20, losses: 4, draws: 0,
+    height: '6\'4"', weight: '265 lbs', reach: '80"', stance: 'Orthodox', age: 42,
+    imageUrl: ufc('2024-11/MIOCIC_STIPE_L.png'),
+    salary: 7500, projectedPoints: 55, avgFantasyPoints: 52, ownership: 10,
+    knockoutPct: 60, submissionPct: 5, decisionPct: 35,
+    strikeAccuracy: 52, strikeDefense: 65, takedownAccuracy: 40, takedownDefense: 75,
+    perFightStats: { sigStrikes: 71, takedowns: 1.8, knockdowns: 0.8, submissionAttempts: 0.2 },
+  },
+  {
     id: 'alexander-volkov', name: 'Alexander Volkov', nickname: 'Drago',
     nationality: 'Russian', countryFlag: '🇷🇺', weightClass: 'Heavyweight',
     record: '37-10-0', wins: 37, losses: 10, draws: 0,
