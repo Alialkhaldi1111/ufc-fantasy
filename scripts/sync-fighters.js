@@ -18,7 +18,18 @@ function get(url) {
         headers: {
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-          Accept: 'application/json',
+          Accept: 'application/json, text/plain, */*',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Accept-Encoding': 'gzip, deflate, br',
+          Referer: 'https://www.espn.com/',
+          Origin: 'https://www.espn.com',
+          'sec-ch-ua': '"Chromium";v="124", "Google Chrome";v="124"',
+          'sec-ch-ua-mobile': '?0',
+          'sec-ch-ua-platform': '"Windows"',
+          'sec-fetch-dest': 'empty',
+          'sec-fetch-mode': 'cors',
+          'sec-fetch-site': 'same-site',
+          Connection: 'keep-alive',
         },
       },
       (res) => {
@@ -278,6 +289,61 @@ function generateFightersTs(fighters) {
   return lines.join('\n');
 }
 
+async function syncFromTheSportsDB() {
+  // TheSportsDB free API — no key needed
+  const UFC_TEAM_ID = '134903';
+  const url = `https://www.thesportsdb.com/api/v1/json/3/lookup_all_players.php?id=${UFC_TEAM_ID}`;
+  console.log('  Fetching from TheSportsDB...');
+  const data = await get(url);
+
+  if (!data || !data.player || data.player.length === 0) {
+    console.error('❌ TheSportsDB also failed. Please check your internet connection.');
+    console.log('\nOpen this in your browser to test:');
+    console.log(`https://www.thesportsdb.com/api/v1/json/3/lookup_all_players.php?id=${UFC_TEAM_ID}`);
+    process.exit(1);
+  }
+
+  const fighters = data.player
+    .filter((p) => p.strSport === 'MMA' || p.strTeam?.includes('UFC'))
+    .map((p, i, arr) => {
+      const wins = parseInt(p.strDescriptionEN?.match(/(\d+) wins/i)?.[1] || 0);
+      const losses = parseInt(p.strDescriptionEN?.match(/(\d+) loss/i)?.[1] || 0);
+      const draws = parseInt(p.strDescriptionEN?.match(/(\d+) draw/i)?.[1] || 0);
+      const nationality = p.strNationality || p.strCountry || '';
+      const salary = salaryFromRank(i, arr.length);
+      const proj = projectedPoints(wins, losses, 0, 0);
+      return {
+        id: slugify(p.strPlayer),
+        name: p.strPlayer,
+        nickname: p.strDescriptionEN?.match(/"([^"]+)"/)?.[1] || '',
+        nationality,
+        countryFlag: getFlag(nationality),
+        weightClass: p.strPosition || 'Unknown',
+        record: `${wins}-${losses}-${draws}`,
+        wins, losses, draws,
+        height: p.strHeight || '',
+        weight: p.strWeight || '',
+        reach: '',
+        stance: '',
+        age: p.dateBorn ? new Date().getFullYear() - new Date(p.dateBorn).getFullYear() : 0,
+        imageUrl: p.strThumb || p.strCutout || undefined,
+        salary,
+        projectedPoints: proj,
+        avgFantasyPoints: Math.max(proj - 4, 40),
+        ownership: Math.min(Math.round((proj - 40) * 1.2), 45),
+        knockoutPct: 33, submissionPct: 33, decisionPct: 34,
+        strikeAccuracy: 50, strikeDefense: 60,
+        takedownAccuracy: 45, takedownDefense: 65,
+        perFightStats: { sigStrikes: 60, takedowns: 2.0, knockdowns: 0.5, submissionAttempts: 1.0 },
+      };
+    });
+
+  const outputPath = path.join(__dirname, '..', 'data', 'fighters.ts');
+  fs.writeFileSync(outputPath, generateFightersTs(fighters), 'utf8');
+  console.log(`\n✅ Done! ${fighters.length} fighters written to data/fighters.ts`);
+  console.log('\nNext: git add data/fighters.ts && git commit -m "Sync fighters" && git push');
+}
+
 async function main() {
   console.log('🥊 UFC Fighter Sync — fetching from ESPN API...\n');
 
@@ -308,10 +374,9 @@ async function main() {
   }
 
   if (allAthletes.length === 0) {
-    console.error('\n❌ Could not reach ESPN API. Check your internet connection.');
-    console.log('\nTry opening this URL in your browser first:');
-    console.log('https://site.api.espn.com/apis/site/v2/sports/mma/ufc/athletes?limit=5');
-    process.exit(1);
+    console.log('\n⚠ ESPN API blocked. Trying backup source (TheSportsDB)...\n');
+    await syncFromTheSportsDB();
+    return;
   }
 
   console.log(`\n✓ Found ${allAthletes.length} fighters. Fetching details...\n`);
