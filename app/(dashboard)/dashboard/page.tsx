@@ -6,6 +6,7 @@ import { Wallet, Trophy, Target, TrendingUp, Zap, Flame, Clock, ChevronRight, St
 import { mockUser } from '@/data/mockUser';
 import { events } from '@/data/events';
 import { fighters } from '@/data/fighters';
+import { ActivityFeed } from '@/components/social/ActivityFeed';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -263,6 +264,12 @@ export default function DashboardPage() {
           </motion.div>
         </div>
       </div>
+
+      {/* Community Feed */}
+      <motion.div variants={fadeInUp}>
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-4">Community Feed</h2>
+        <ActivityFeed compact />
+      </motion.div>
     </motion.div>
   );
 }
