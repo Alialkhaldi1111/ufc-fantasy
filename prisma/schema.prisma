@@ -427,3 +427,87 @@ model ChatMessage {
 
   @@index([contestId])
 }
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  REFUNDED
+  CANCELLED
+}
+
+model StoreProduct {
+  id           String      @id @default(cuid())
+  name         String
+  slug         String      @unique
+  description  String
+  price        Int
+  comparePrice Int?
+  cost         Int
+  stock        Int         @default(100)
+  images       String[]
+  featured     Boolean     @default(false)
+  active       Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  orders       OrderItem[]
+}
+
+model StoreOrder {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
+  email           String
+  firstName       String
+  lastName        String
+  phone           String?
+  address         String
+  city            String
+  state           String
+  zip             String
+  country         String      @default("US")
+  status          OrderStatus @default(PENDING)
+  subtotal        Int
+  discount        Int         @default(0)
+  shipping        Int         @default(0)
+  total           Int
+  stripePaymentId String?
+  discountCode    String?
+  notes           String?
+  trackingNumber  String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id        String       @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Int
+  order     StoreOrder   @relation(fields: [orderId], references: [id])
+  product   StoreProduct @relation(fields: [productId], references: [id])
+}
+
+model DiscountCode {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  description String?
+  type        String    @default("percentage")
+  value       Int
+  maxUses     Int?
+  usedCount   Int       @default(0)
+  influencer  String?
+  active      Boolean   @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model EmailSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  firstName String?
+  source    String?
+  createdAt DateTime @default(now())
+}
