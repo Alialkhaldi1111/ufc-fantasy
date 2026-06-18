@@ -1,43 +1,30 @@
-import type { Metadata } from 'next';
-import StoreNav from '@/components/store/StoreNav';
-import CartDrawer from '@/components/store/CartDrawer';
+import type { ReactNode } from 'react';
+import { StoreNav } from '@/components/store/StoreNav';
+import { CartDrawer } from '@/components/store/CartDrawer';
+import { DiscountBanner } from '@/components/store/DiscountBanner';
 
-export const metadata: Metadata = {
-  title: 'APEX Cold Plunge — Train & Recover Like a Champion',
-  description: 'The #1 portable ice bath used by UFC fighters. Free shipping. 30-day returns.',
-};
-
-export default function StoreLayout({ children }: { children: React.ReactNode }) {
+export default function StoreLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#080c12] text-white">
+    <div className="min-h-screen bg-[#080c12] text-white flex flex-col">
+      <DiscountBanner />
       <StoreNav />
+      <main className="flex-1">{children}</main>
       <CartDrawer />
-      {children}
-      <footer className="border-t border-white/10 mt-20 py-12">
-        <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 text-sm text-gray-400">
-          <div>
-            <div className="font-bold text-white text-lg mb-2">APEX Cold Plunge</div>
-            <p>Professional recovery gear for serious athletes. Train hard, recover harder.</p>
+      <footer className="border-t border-white/10 py-8 mt-16">
+        <div className="max-w-6xl mx-auto px-4 text-center space-y-3">
+          <p className="text-[#39FF14] font-black text-lg">APEX Cold Plunge</p>
+          <p className="text-white/40 text-sm">
+            © {new Date().getFullYear()} APEX Cold Plunge. All rights reserved.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4 text-xs text-white/40">
+            <span>Privacy Policy</span>
+            <span>Terms of Service</span>
+            <span>Shipping Policy</span>
+            <span>Refund Policy</span>
           </div>
-          <div>
-            <div className="font-semibold text-white mb-2">Quick Links</div>
-            <ul className="space-y-1">
-              <li><a href="/store" className="hover:text-white transition-colors">Product</a></li>
-              <li><a href="/store/waitlist" className="hover:text-white transition-colors">Early Access</a></li>
-              <li><a href="/store/cart" className="hover:text-white transition-colors">Cart</a></li>
-            </ul>
-          </div>
-          <div>
-            <div className="font-semibold text-white mb-2">Support</div>
-            <ul className="space-y-1">
-              <li><a href="mailto:support@apexcoldplunge.com" className="hover:text-white transition-colors">support@apexcoldplunge.com</a></li>
-              <li>Ships within 3–5 business days</li>
-              <li>30-day no-questions return policy</li>
-            </ul>
-          </div>
-        </div>
-        <div className="max-w-6xl mx-auto px-4 mt-8 pt-8 border-t border-white/10 text-xs text-gray-600 text-center">
-          © 2026 APEX Cold Plunge. All rights reserved.
+          <p className="text-white/30 text-xs">
+            Questions? Email us at support@apexcoldplunge.com
+          </p>
         </div>
       </footer>
     </div>

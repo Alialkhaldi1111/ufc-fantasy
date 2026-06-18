@@ -1,22 +1,38 @@
-import { Truck, RefreshCcw, Shield, Star } from 'lucide-react';
-
-const badges = [
-  { icon: Truck, label: 'Free Shipping', sub: 'On orders over $199' },
-  { icon: RefreshCcw, label: '30-Day Returns', sub: 'No questions asked' },
-  { icon: Shield, label: '1-Year Warranty', sub: 'Full coverage' },
-  { icon: Star, label: '4.9/5 Stars', sub: '2,847 reviews' },
+const BADGES = [
+  { icon: '🚚', label: 'Free Shipping', sub: 'On all orders' },
+  { icon: '↩️', label: '30-Day Returns', sub: 'No questions asked' },
+  { icon: '🛡️', label: '1-Year Warranty', sub: 'Full coverage' },
+  { icon: '🔒', label: 'Secure Checkout', sub: '256-bit SSL' },
 ];
 
-export default function TrustBadges({ className = '' }: { className?: string }) {
+interface TrustBadgesProps {
+  compact?: boolean;
+}
+
+export function TrustBadges({ compact = false }: TrustBadgesProps) {
+  if (compact) {
+    return (
+      <div className="flex flex-wrap gap-3 justify-center">
+        {BADGES.map((b) => (
+          <span key={b.label} className="text-xs text-white/60 flex items-center gap-1">
+            <span>{b.icon}</span>
+            <span>{b.label}</span>
+          </span>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 ${className}`}>
-      {badges.map(({ icon: Icon, label, sub }) => (
-        <div key={label} className="flex items-center gap-3 bg-white/5 rounded-xl p-3">
-          <Icon className="w-6 h-6 text-[#39FF14] shrink-0" />
-          <div>
-            <div className="text-sm font-semibold text-white">{label}</div>
-            <div className="text-xs text-gray-400">{sub}</div>
-          </div>
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {BADGES.map((b) => (
+        <div
+          key={b.label}
+          className="bg-white/5 border border-white/10 rounded-xl p-3 text-center space-y-1"
+        >
+          <div className="text-2xl">{b.icon}</div>
+          <p className="text-white font-semibold text-sm">{b.label}</p>
+          <p className="text-white/50 text-xs">{b.sub}</p>
         </div>
       ))}
     </div>

@@ -1,21 +1,26 @@
-import { NextResponse } from 'next/server';
-
-const PRODUCTS = [
-  {
-    id: 'apex-cold-plunge-v1',
-    slug: 'apex-cold-plunge-pro',
-    name: 'APEX Cold Plunge Pro',
-    description: 'Professional portable ice bath for elite athletes. Sets up in 60 seconds.',
-    price: 24900,
-    comparePrice: 39900,
-    cost: 8500,
-    stock: 47,
-    images: [],
-    featured: true,
-    active: true,
-  },
-];
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 export async function GET() {
-  return NextResponse.json({ products: PRODUCTS.filter((p) => p.active) });
+  try {
+    const products = await prisma.storeProduct.findMany({
+      where: { active: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return NextResponse.json(products);
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const product = await prisma.storeProduct.create({ data: body });
+    return NextResponse.json(product, { status: 201 });
+  } catch (error) {
+    console.error('Error creating product:', error);
+    return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
+  }
 }

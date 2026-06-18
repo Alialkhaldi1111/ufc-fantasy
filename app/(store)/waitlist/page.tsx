@@ -1,114 +1,123 @@
 'use client';
 
-import { useState } from 'react';
-import { Zap, Check, Users } from 'lucide-react';
-import CountdownTimer from '@/components/store/CountdownTimer';
+import React, { useState } from 'react';
+import { CountdownTimer } from '@/components/store/CountdownTimer';
+
+const LAUNCH_DATE = new Date('2026-07-01T00:00:00Z');
+const WAITLIST_COUNT = 3847;
 
 export default function WaitlistPage() {
-  const [submitted, setSubmitted] = useState(false);
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!email) return;
     setLoading(true);
-    await fetch('/api/store/waitlist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, firstName, source: 'waitlist_page' }),
-    });
-    setLoading(false);
-    setSubmitted(true);
+    setError('');
+    try {
+      const res = await fetch('/api/store/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, firstName, source: 'waitlist' }),
+      });
+      if (!res.ok) throw new Error('Failed');
+      setDone(true);
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (submitted) {
-    return (
-      <div className="max-w-xl mx-auto px-4 py-20 text-center space-y-6">
-        <div className="text-6xl">🎉</div>
-        <h1 className="text-3xl font-black text-white">You&apos;re on the list, {firstName || 'Athlete'}!</h1>
-        <p className="text-gray-300">
-          We&apos;ll email you your <strong className="text-[#39FF14]">15% early access discount</strong> the moment we launch. You&apos;re one of the first.
-        </p>
-        <div className="bg-white/5 border border-[#39FF14]/30 rounded-2xl p-4">
-          <div className="text-[#39FF14] font-mono font-bold text-xl">EARLY15</div>
-          <div className="text-gray-400 text-sm mt-1">Your early access code — valid at launch</div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-2xl mx-auto px-4 py-16 text-center space-y-8">
-      <div className="space-y-3">
-        <div className="inline-flex items-center gap-2 bg-[#39FF14]/10 border border-[#39FF14]/30 text-[#39FF14] text-sm font-semibold px-4 py-2 rounded-full">
-          <Zap className="w-4 h-4" />
-          Early Access — Limited Spots
-        </div>
-        <h1 className="text-4xl md:text-5xl font-black text-white leading-tight">
-          Get <span className="text-[#39FF14]">15% Off</span>
-          <br />Before We Launch
+    <div className="max-w-2xl mx-auto px-4 py-20 space-y-12">
+      {/* Header */}
+      <div className="text-center space-y-4">
+        <div className="text-7xl">🧊</div>
+        <h1 className="text-4xl font-black text-white">
+          The Drop is Coming
         </h1>
-        <p className="text-gray-300 text-lg">
-          The APEX Cold Plunge launches soon. Early access members get 15% off, free priority shipping, and first choice of inventory.
+        <p className="text-white/60 text-lg">
+          Be first in line when the next batch of APEX Cold Plunge tubs drops.
         </p>
       </div>
 
-      <div className="flex items-center justify-center gap-6 text-sm text-gray-400">
-        <span className="flex items-center gap-1">
-          <Users className="w-4 h-4 text-[#39FF14]" />
-          <strong className="text-white">3,847</strong> already waiting
-        </span>
-        <span>·</span>
-        <span>Limited to first <strong className="text-white">500</strong> spots</span>
-      </div>
-
-      <div className="space-y-2">
-        <div className="text-sm text-gray-400 font-medium">LAUNCH COUNTDOWN:</div>
-        <div className="flex justify-center">
-          <CountdownTimer hours={72} />
+      {/* Countdown */}
+      <div className="bg-[#0f1520] border border-white/10 rounded-2xl p-8 text-center space-y-4">
+        <p className="text-white/50 uppercase tracking-widest text-sm">Next Drop In</p>
+        <CountdownTimer targetDate={LAUNCH_DATE} className="text-5xl text-[#39FF14]" />
+        <div className="flex justify-center gap-8 text-white/40 text-xs uppercase tracking-wide">
+          <span>Hours</span>
+          <span>Minutes</span>
+          <span>Seconds</span>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4 text-left">
-        <h2 className="font-bold text-white text-center">Reserve Your Spot</h2>
-        <input
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
-          placeholder="First name"
-          className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-[#39FF14]"
-        />
-        <input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="your@email.com"
-          className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-[#39FF14]"
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-[#39FF14] hover:bg-[#2acc10] disabled:opacity-60 text-black font-black py-4 rounded-xl text-lg transition-all hover:scale-[1.02] active:scale-95"
-        >
-          {loading ? 'Joining...' : 'Get Early Access + 15% Off →'}
-        </button>
-        <p className="text-xs text-gray-500 text-center">No spam. One email at launch. Unsubscribe anytime.</p>
-      </form>
+      {/* Social proof */}
+      <div className="text-center">
+        <p className="text-white/70">
+          <span className="text-[#39FF14] font-black text-2xl">{WAITLIST_COUNT.toLocaleString()}+</span>
+          <span className="text-white/50 ml-2">people already on the waitlist</span>
+        </p>
+      </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      {/* Benefits */}
+      <div className="bg-[#0f1520] border border-[#39FF14]/20 rounded-2xl p-6 space-y-3">
+        <h2 className="text-white font-bold">Waitlist Benefits</h2>
         {[
-          { icon: '💰', title: '15% Off', desc: 'Exclusive launch discount' },
-          { icon: '🚀', title: 'First Access', desc: 'Before public launch' },
-          { icon: '📦', title: 'Priority Ship', desc: 'Jump the queue' },
-        ].map(({ icon, title, desc }) => (
-          <div key={title} className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-1">
-            <div className="text-2xl">{icon}</div>
-            <div className="font-semibold text-white text-sm">{title}</div>
-            <div className="text-xs text-gray-400">{desc}</div>
-          </div>
+          '🎯 Early access — shop before the public',
+          '💰 Exclusive 15% off for waitlist members',
+          '📦 Priority shipping on your order',
+          '🎁 Free APEX Recovery Guide ($29 value)',
+        ].map((b) => (
+          <p key={b} className="text-white/70 text-sm">{b}</p>
         ))}
       </div>
+
+      {/* Form */}
+      {done ? (
+        <div className="bg-[#39FF14]/10 border border-[#39FF14]/30 rounded-2xl p-8 text-center space-y-3">
+          <div className="text-5xl">✅</div>
+          <h2 className="text-white font-black text-xl">You&apos;re on the list!</h2>
+          <p className="text-white/60 text-sm">
+            We&apos;ll email you at <span className="text-[#39FF14]">{email}</span> when we drop. Your
+            exclusive 15% off code will be included.
+          </p>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-3">
+            <input
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="First name"
+              className="bg-white/5 border border-white/20 rounded-xl px-4 py-4 text-white placeholder-white/30 focus:outline-none focus:border-[#39FF14]/50"
+            />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email address"
+              required
+              className="bg-white/5 border border-white/20 rounded-xl px-4 py-4 text-white placeholder-white/30 focus:outline-none focus:border-[#39FF14]/50"
+            />
+          </div>
+          {error && <p className="text-[#FF3131] text-sm">{error}</p>}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[#39FF14] text-black font-black text-xl py-5 rounded-xl hover:bg-[#2acc10] transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Joining...' : 'JOIN THE WAITLIST — FREE'}
+          </button>
+          <p className="text-white/30 text-xs text-center">No spam. Unsubscribe anytime.</p>
+        </form>
+      )}
     </div>
   );
 }

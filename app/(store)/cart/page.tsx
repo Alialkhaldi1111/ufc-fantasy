@@ -1,203 +1,217 @@
 'use client';
 
-import { useState } from 'react';
-import { Minus, Plus, X, Tag, Truck, ArrowLeft } from 'lucide-react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/useCartStore';
-import TrustBadges from '@/components/store/TrustBadges';
+import { TrustBadges } from '@/components/store/TrustBadges';
+import { Minus, Plus, Trash2 } from 'lucide-react';
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, total, clearCart } = useCartStore();
+  const { items, updateQuantity, removeItem, total } = useCartStore();
   const [discountCode, setDiscountCode] = useState('');
-  const [appliedCode, setAppliedCode] = useState<{ code: string; value: number } | null>(null);
-  const [codeError, setCodeError] = useState('');
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const router = useRouter();
+  const [discountResult, setDiscountResult] = useState<{
+    valid: boolean;
+    type?: string;
+    value?: number;
+    error?: string;
+  } | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const subtotal = total();
-  const discount = appliedCode ? Math.floor(subtotal * (appliedCode.value / 100)) : 0;
-  const shipping = subtotal - discount >= 19900 ? 0 : 999;
-  const orderTotal = subtotal - discount + shipping;
+  const discountAmount =
+    discountResult?.valid && discountResult.value
+      ? discountResult.type === 'percentage'
+        ? Math.round(subtotal * (discountResult.value / 100))
+        : discountResult.value
+      : 0;
+  const shipping = subtotal - discountAmount >= 19900 ? 0 : 999;
+  const orderTotal = subtotal - discountAmount + shipping;
 
-  const applyCode = async () => {
-    setCodeError('');
-    const res = await fetch('/api/store/discount-codes/validate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: discountCode.trim().toUpperCase() }),
-    });
-    const data = await res.json();
-    if (data.valid) {
-      setAppliedCode({ code: discountCode.trim().toUpperCase(), value: data.value });
-    } else {
-      setCodeError('Invalid or expired discount code.');
+  const handleApplyDiscount = async () => {
+    if (!discountCode.trim()) return;
+    try {
+      const res = await fetch('/api/store/discount-codes/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: discountCode }),
+      });
+      const data = await res.json();
+      setDiscountResult(data);
+    } catch {
+      setDiscountResult({ valid: false, error: 'Failed to validate code' });
     }
   };
 
   const handleCheckout = async () => {
-    setIsCheckingOut(true);
+    if (items.length === 0) return;
+    setCheckoutLoading(true);
     try {
       const res = await fetch('/api/store/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: items.map((i) => ({ id: i.id, quantity: i.quantity, price: i.price, name: i.name })),
-          discountCode: appliedCode?.code,
+          items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+          discountCode: discountResult?.valid ? discountCode : undefined,
         }),
       });
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
-      } else {
-        alert('Checkout failed. Please try again.');
       }
-    } catch {
-      alert('Something went wrong. Please try again.');
+    } catch (err) {
+      console.error('Checkout error:', err);
     } finally {
-      setIsCheckingOut(false);
+      setCheckoutLoading(false);
     }
   };
 
   if (items.length === 0) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-20 text-center space-y-6">
-        <div className="text-6xl">🛒</div>
-        <h1 className="text-2xl font-bold text-white">Your cart is empty</h1>
-        <p className="text-gray-400">Add the APEX Cold Plunge to get started.</p>
+      <div className="max-w-2xl mx-auto px-4 py-24 text-center space-y-6">
+        <div className="text-7xl">🧊</div>
+        <h1 className="text-3xl font-black text-white">Your cart is empty</h1>
+        <p className="text-white/50">Start your recovery journey today.</p>
         <Link
-          href="/store"
-          className="inline-block bg-[#39FF14] text-black font-bold px-8 py-3 rounded-xl hover:bg-[#2acc10] transition-colors"
+          href="/"
+          className="inline-block bg-[#39FF14] text-black font-black px-8 py-4 rounded-xl hover:bg-[#2acc10] transition-colors"
         >
-          Shop Now
+          SHOP NOW
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10">
-      <div className="flex items-center gap-3 mb-8">
-        <Link href="/store" className="text-gray-400 hover:text-white flex items-center gap-1 text-sm transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Continue Shopping
-        </Link>
-        <span className="text-gray-600">/</span>
-        <h1 className="text-2xl font-black text-white">Your Cart</h1>
-      </div>
+    <div className="max-w-5xl mx-auto px-4 py-12">
+      <h1 className="text-3xl font-black text-white mb-8">Your Cart</h1>
 
       <div className="grid lg:grid-cols-3 gap-8">
-        {/* Items */}
+        {/* Cart items */}
         <div className="lg:col-span-2 space-y-4">
           {items.map((item) => (
-            <div key={item.id} className="bg-white/5 border border-white/10 rounded-2xl p-4 flex gap-4">
-              <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-cyan-950 to-blue-950 flex items-center justify-center text-3xl shrink-0">
-                🧊
+            <div
+              key={item.productId}
+              className="flex gap-4 bg-[#0f1520] border border-white/10 rounded-xl p-4"
+            >
+              <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-blue-900 to-[#39FF14]/10 flex items-center justify-center flex-shrink-0">
+                <span className="text-3xl">🧊</span>
               </div>
-              <div className="flex-1 space-y-2">
-                <div className="flex justify-between">
-                  <div className="font-semibold text-white">{item.name}</div>
-                  <button onClick={() => removeItem(item.id)} className="text-gray-500 hover:text-red-400 transition-colors">
-                    <X className="w-4 h-4" />
+              <div className="flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-white font-bold">{item.name}</p>
+                    <p className="text-white/50 text-sm">APEX Cold Plunge</p>
+                  </div>
+                  <button
+                    onClick={() => removeItem(item.productId)}
+                    className="text-red-400 hover:text-red-300"
+                  >
+                    <Trash2 size={16} />
                   </button>
                 </div>
-                <div className="text-[#39FF14] font-bold text-lg">${(item.price / 100).toFixed(2)}</div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
-                  >
-                    <Minus className="w-3 h-3" />
-                  </button>
-                  <span className="w-8 text-center font-bold text-white">{item.quantity}</span>
-                  <button
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
-                  >
-                    <Plus className="w-3 h-3" />
-                  </button>
-                  <span className="ml-auto text-gray-300 font-semibold">
+                <div className="flex items-center justify-between mt-3">
+                  <div className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-1.5">
+                    <button
+                      onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                      className="text-white/60 hover:text-white"
+                    >
+                      <Minus size={14} />
+                    </button>
+                    <span className="text-white font-bold w-5 text-center">{item.quantity}</span>
+                    <button
+                      onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                      className="text-white/60 hover:text-white"
+                    >
+                      <Plus size={14} />
+                    </button>
+                  </div>
+                  <p className="text-white font-bold text-lg">
                     ${((item.price * item.quantity) / 100).toFixed(2)}
-                  </span>
+                  </p>
                 </div>
               </div>
             </div>
           ))}
 
-          {/* Discount Code */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-gray-300">
-              <Tag className="w-4 h-4 text-[#39FF14]" />
-              Discount Code
-            </div>
-            {appliedCode ? (
-              <div className="flex items-center justify-between bg-[#39FF14]/10 border border-[#39FF14]/30 rounded-xl p-3">
-                <span className="text-[#39FF14] font-mono font-bold">{appliedCode.code} — {appliedCode.value}% off</span>
-                <button onClick={() => setAppliedCode(null)} className="text-gray-400 hover:text-white">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
+          <Link href="/" className="text-[#39FF14] text-sm hover:underline">
+            ← Continue Shopping
+          </Link>
+        </div>
+
+        {/* Order summary */}
+        <div className="space-y-4">
+          <div className="bg-[#0f1520] border border-white/10 rounded-xl p-5 space-y-4">
+            <h2 className="text-white font-bold text-lg">Order Summary</h2>
+
+            {/* Discount code */}
+            <div className="space-y-2">
               <div className="flex gap-2">
                 <input
+                  type="text"
                   value={discountCode}
                   onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-                  placeholder="APEX20"
-                  className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white placeholder:text-gray-500 font-mono text-sm focus:outline-none focus:border-[#39FF14]"
+                  placeholder="Discount code"
+                  className="flex-1 bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white text-sm placeholder-white/30 focus:outline-none focus:border-[#39FF14]/50"
                 />
                 <button
-                  onClick={applyCode}
-                  className="bg-white/10 hover:bg-white/20 text-white font-semibold px-4 py-2 rounded-xl transition-colors"
+                  onClick={handleApplyDiscount}
+                  className="bg-white/10 text-white text-sm px-3 py-2 rounded-lg hover:bg-white/20 transition-colors font-semibold"
                 >
                   Apply
                 </button>
               </div>
-            )}
-            {codeError && <p className="text-red-400 text-xs">{codeError}</p>}
-          </div>
-
-          {/* Shipping Banner */}
-          {shipping > 0 && (
-            <div className="flex items-center gap-2 text-sm text-gray-400 bg-white/5 border border-white/10 rounded-xl p-3">
-              <Truck className="w-4 h-4 text-[#39FF14]" />
-              Add ${((19900 - (subtotal - discount)) / 100).toFixed(2)} more for <span className="text-[#39FF14] font-semibold ml-1">FREE shipping</span>
+              {discountResult && (
+                <p
+                  className={`text-xs ${discountResult.valid ? 'text-[#39FF14]' : 'text-[#FF3131]'}`}
+                >
+                  {discountResult.valid
+                    ? `✅ ${discountResult.value}${discountResult.type === 'percentage' ? '%' : '¢'} off applied!`
+                    : `❌ ${discountResult.error}`}
+                </p>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Summary */}
-        <div className="space-y-4">
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4 sticky top-20">
-            <h2 className="font-bold text-white text-lg">Order Summary</h2>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between text-gray-400">
+            <div className="space-y-2 text-sm border-t border-white/10 pt-4">
+              <div className="flex justify-between text-white/70">
                 <span>Subtotal</span>
                 <span>${(subtotal / 100).toFixed(2)}</span>
               </div>
-              {discount > 0 && (
+              {discountAmount > 0 && (
                 <div className="flex justify-between text-[#39FF14]">
-                  <span>Discount ({appliedCode?.code})</span>
-                  <span>−${(discount / 100).toFixed(2)}</span>
+                  <span>Discount ({discountCode})</span>
+                  <span>−${(discountAmount / 100).toFixed(2)}</span>
                 </div>
               )}
-              <div className="flex justify-between text-gray-400">
+              <div className="flex justify-between text-white/70">
                 <span>Shipping</span>
                 <span>{shipping === 0 ? <span className="text-[#39FF14]">FREE</span> : `$${(shipping / 100).toFixed(2)}`}</span>
               </div>
-              <div className="border-t border-white/10 pt-2 flex justify-between font-bold text-white text-lg">
-                <span>Total</span>
-                <span>${(orderTotal / 100).toFixed(2)}</span>
-              </div>
+              {shipping > 0 && (
+                <p className="text-white/40 text-xs">
+                  Free shipping on orders over $199
+                </p>
+              )}
             </div>
+
+            <div className="flex justify-between text-white font-black text-lg border-t border-white/10 pt-4">
+              <span>Total</span>
+              <span>${(orderTotal / 100).toFixed(2)}</span>
+            </div>
+
             <button
               onClick={handleCheckout}
-              disabled={isCheckingOut}
-              className="w-full bg-[#39FF14] hover:bg-[#2acc10] disabled:opacity-50 text-black font-black py-4 rounded-xl text-lg transition-all hover:scale-[1.02] active:scale-95"
+              disabled={checkoutLoading}
+              className="w-full bg-[#39FF14] text-black font-black text-lg py-4 rounded-xl hover:bg-[#2acc10] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
             >
-              {isCheckingOut ? 'Redirecting...' : 'Checkout Securely →'}
+              {checkoutLoading ? 'Redirecting...' : 'CHECKOUT NOW →'}
             </button>
-            <p className="text-xs text-gray-500 text-center">🔒 Secured by Stripe. Your payment info is never stored.</p>
-            <TrustBadges />
+
+            <p className="text-white/40 text-xs text-center">
+              Secure checkout powered by Stripe
+            </p>
           </div>
+
+          <TrustBadges />
         </div>
       </div>
     </div>

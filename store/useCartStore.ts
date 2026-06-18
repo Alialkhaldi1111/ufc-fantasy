@@ -4,19 +4,21 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export interface CartItem {
-  id: string;
+  productId: string;
   name: string;
   price: number;
-  image: string;
+  comparePrice?: number;
+  image?: string;
   quantity: number;
+  slug: string;
 }
 
 interface CartStore {
   items: CartItem[];
   isOpen: boolean;
   addItem: (item: Omit<CartItem, 'quantity'>) => void;
-  removeItem: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  removeItem: (productId: string) => void;
+  updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
   openCart: () => void;
   closeCart: () => void;
@@ -32,11 +34,13 @@ export const useCartStore = create<CartStore>()(
 
       addItem: (item) => {
         set((state) => {
-          const existing = state.items.find((i) => i.id === item.id);
+          const existing = state.items.find((i) => i.productId === item.productId);
           if (existing) {
             return {
               items: state.items.map((i) =>
-                i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
+                i.productId === item.productId
+                  ? { ...i, quantity: i.quantity + 1 }
+                  : i
               ),
               isOpen: true,
             };
@@ -45,16 +49,21 @@ export const useCartStore = create<CartStore>()(
         });
       },
 
-      removeItem: (id) =>
-        set((state) => ({ items: state.items.filter((i) => i.id !== id) })),
+      removeItem: (productId) => {
+        set((state) => ({
+          items: state.items.filter((i) => i.productId !== productId),
+        }));
+      },
 
-      updateQuantity: (id, quantity) => {
-        if (quantity < 1) {
-          get().removeItem(id);
+      updateQuantity: (productId, quantity) => {
+        if (quantity <= 0) {
+          get().removeItem(productId);
           return;
         }
         set((state) => ({
-          items: state.items.map((i) => (i.id === id ? { ...i, quantity } : i)),
+          items: state.items.map((i) =>
+            i.productId === productId ? { ...i, quantity } : i
+          ),
         }));
       },
 
@@ -62,12 +71,17 @@ export const useCartStore = create<CartStore>()(
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
 
-      total: () =>
-        get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
+      total: () => {
+        return get().items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      },
 
-      itemCount: () =>
-        get().items.reduce((sum, i) => sum + i.quantity, 0),
+      itemCount: () => {
+        return get().items.reduce((sum, item) => sum + item.quantity, 0);
+      },
     }),
-    { name: 'apex-cart' }
+    {
+      name: 'apex-cart',
+      partialize: (state) => ({ items: state.items }),
+    }
   )
 );

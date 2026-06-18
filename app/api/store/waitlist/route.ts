@@ -1,22 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// In-memory store for demo — replace with Prisma in production
-const subscribers = new Set<string>();
+import { prisma } from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
   try {
     const { email, firstName, source } = await req.json();
-    if (!email || !email.includes('@')) {
-      return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
-    }
-    subscribers.add(email.toLowerCase().trim());
-    console.log(`Waitlist signup: ${email} (${source || 'unknown'})`);
-    return NextResponse.json({ success: true, message: 'Added to waitlist' });
-  } catch {
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
-  }
-}
 
-export async function GET() {
-  return NextResponse.json({ count: subscribers.size });
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    }
+
+    const subscriber = await prisma.emailSubscriber.upsert({
+      where: { email },
+      update: { firstName, source },
+      create: { email, firstName, source: source ?? 'waitlist' },
+    });
+
+    const count = await prisma.emailSubscriber.count();
+
+    return NextResponse.json({ success: true, subscriber, count });
+  } catch (error) {
+    console.error('Error adding to waitlist:', error);
+    return NextResponse.json({ error: 'Failed to join waitlist' }, { status: 500 });
+  }
 }

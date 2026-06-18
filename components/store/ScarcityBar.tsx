@@ -1,26 +1,26 @@
 'use client';
 
 interface ScarcityBarProps {
+  stock: number;
   total?: number;
-  remaining?: number;
 }
 
-export default function ScarcityBar({ total = 100, remaining = 47 }: ScarcityBarProps) {
-  const sold = total - remaining;
-  const pct = (sold / total) * 100;
+export function ScarcityBar({ stock, total = 200 }: ScarcityBarProps) {
+  const pct = Math.max(0, Math.min(100, ((total - stock) / total) * 100));
 
   return (
     <div className="space-y-1">
-      <div className="flex justify-between text-sm">
-        <span className="text-red-400 font-semibold">⚡ Only {remaining} units left at this price!</span>
-        <span className="text-gray-400">{sold} sold</span>
-      </div>
-      <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+      <p className="text-sm font-semibold text-[#FF3131] flex items-center gap-1">
+        <span>⚡</span>
+        <span>Only {stock} units left at this price!</span>
+      </p>
+      <div className="h-2 bg-white/10 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-red-600 to-red-400 rounded-full transition-all"
+          className="h-full bg-[#FF3131] rounded-full transition-all duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
+      <p className="text-xs text-white/50">{Math.round(pct)}% sold — hurry before we run out!</p>
     </div>
   );
 }
