@@ -11,15 +11,15 @@ export function StoreNav() {
   return (
     <nav className="sticky top-0 z-50 bg-[#080c12]/90 backdrop-blur border-b border-white/10">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/store" className="flex items-center gap-2">
           <span className="text-[#39FF14] font-black text-xl tracking-tight">APEX</span>
           <span className="text-white/60 text-xs uppercase tracking-widest">Cold Plunge</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-6 text-sm text-white/70">
-          <Link href="/#product" className="hover:text-white transition-colors">Product</Link>
-          <Link href="/#reviews" className="hover:text-white transition-colors">Reviews</Link>
-          <Link href="/#faq" className="hover:text-white transition-colors">FAQ</Link>
+          <Link href="/store#product" className="hover:text-white transition-colors">Product</Link>
+          <Link href="/store#reviews" className="hover:text-white transition-colors">Reviews</Link>
+          <Link href="/store#faq" className="hover:text-white transition-colors">FAQ</Link>
         </div>
 
         <div className="flex items-center gap-3">

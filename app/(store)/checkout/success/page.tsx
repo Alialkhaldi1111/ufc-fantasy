@@ -87,7 +87,7 @@ export default function CheckoutSuccessPage() {
       </div>
 
       <Link
-        href="/"
+        href="/store"
         className="inline-block text-white/60 text-sm hover:text-white transition-colors"
       >
         ← Back to Store

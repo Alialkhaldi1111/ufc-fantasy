@@ -40,7 +40,7 @@ export function CartDrawer() {
               <div className="text-5xl mb-4">🧊</div>
               <p className="text-white/50 text-sm">Your cart is empty</p>
               <Link
-                href="/"
+                href="/store"
                 onClick={closeCart}
                 className="mt-4 inline-block text-[#39FF14] text-sm font-semibold hover:underline"
               >
@@ -92,7 +92,7 @@ export function CartDrawer() {
             </div>
             <p className="text-white/50 text-xs text-center">Free shipping on all orders</p>
             <Link
-              href="/cart"
+              href="/store/cart"
               onClick={closeCart}
               className="block w-full bg-[#39FF14] text-black font-black text-center py-4 rounded-xl text-lg hover:bg-[#2acc10] transition-colors"
             >

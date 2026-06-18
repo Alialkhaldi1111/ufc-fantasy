@@ -72,7 +72,7 @@ export default function CartPage() {
         <h1 className="text-3xl font-black text-white">Your cart is empty</h1>
         <p className="text-white/50">Start your recovery journey today.</p>
         <Link
-          href="/"
+          href="/store"
           className="inline-block bg-[#39FF14] text-black font-black px-8 py-4 rounded-xl hover:bg-[#2acc10] transition-colors"
         >
           SHOP NOW
@@ -133,7 +133,7 @@ export default function CartPage() {
             </div>
           ))}
 
-          <Link href="/" className="text-[#39FF14] text-sm hover:underline">
+          <Link href="/store" className="text-[#39FF14] text-sm hover:underline">
             ← Continue Shopping
           </Link>
         </div>
