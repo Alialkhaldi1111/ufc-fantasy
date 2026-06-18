@@ -1,15 +1,24 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Star, Check, ChevronDown, ChevronUp, Plus, Minus, ArrowRight, Zap } from 'lucide-react';
+import { Star, Check, ChevronDown, ChevronUp, Plus, Minus, Shield, Truck, RotateCcw, Zap } from 'lucide-react';
 import { CountdownTimer } from '@/components/store/CountdownTimer';
 import { ScarcityBar } from '@/components/store/ScarcityBar';
 import { useCartStore } from '@/store/useCartStore';
+import Image from 'next/image';
 import Link from 'next/link';
 
 const PRODUCT_ID = 'apex-cold-plunge-v1';
 const PRICE = 24900;
 const COMPARE_PRICE = 39900;
+
+// Free-to-use Unsplash images — replace with your CJDropshipping supplier photos
+const PRODUCT_IMAGES = [
+  'https://images.unsplash.com/photo-1559757175-5700dde675bc?w=800&q=90',
+  'https://images.unsplash.com/photo-1594882645126-14ac19a7b0d2?w=800&q=90',
+  'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=90',
+  'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800&q=90',
+];
 
 const reviews = [
   {
@@ -18,9 +27,10 @@ const reviews = [
     rating: 5,
     date: 'Dec 14, 2025',
     title: 'Cut my recovery time in half',
-    body: "Train MMA 5 days a week. After adding cold plunge post-session, the next-day soreness that used to wreck me is basically gone. I'm not exaggerating — my coach noticed the difference before I even told him what I changed.",
+    body: "Train MMA 5 days a week. After adding cold plunge post-session, the next-day soreness is basically gone. My coach noticed the difference before I even told him what I changed.",
     verified: true,
     tag: 'MMA Fighter',
+    initial: 'M',
   },
   {
     name: 'Jenna M.',
@@ -28,9 +38,10 @@ const reviews = [
     rating: 5,
     date: 'Dec 10, 2025',
     title: 'Bought it for my boyfriend, stolen by me',
-    body: "He got one use before I claimed it. The sleep improvement alone was worth the price — I fall asleep faster and wake up actually rested. We're ordering a second one.",
+    body: "He got one use before I claimed it. The sleep improvement alone was worth the price — I fall asleep faster and wake up actually rested.",
     verified: true,
     tag: 'CrossFit Coach',
+    initial: 'J',
   },
   {
     name: 'Ryan K.',
@@ -38,29 +49,32 @@ const reviews = [
     rating: 5,
     date: 'Nov 28, 2025',
     title: 'Tested next to a $4k permanent unit',
-    body: "My buddy has one of those fancy built-in cold plunges. We timed how long both held 50°F — mine edged his out. Setup takes 60 seconds. His took a plumber and a weekend. You do the math.",
+    body: "My buddy has a built-in cold plunge. We timed both at 50°F — mine held longer. Setup takes 60 seconds. His took a plumber and a weekend.",
     verified: true,
-    tag: 'Strength & Conditioning',
+    tag: 'Strength Coach',
+    initial: 'R',
   },
   {
     name: 'Derek S.',
     location: 'Chicago, IL',
     rating: 5,
     date: 'Nov 21, 2025',
-    title: 'Our whole team uses it now',
-    body: "Started bringing it to fight camp. Now the whole team lines up after sessions. We pack it with ice at 6pm — it's still cold the next morning. The insulation is no joke.",
+    title: 'The whole team uses it now',
+    body: "Started bringing it to fight camp. Now everyone lines up after sessions. Pack it with ice at 6pm — still cold the next morning.",
     verified: true,
     tag: 'Amateur Fighter',
+    initial: 'D',
   },
   {
     name: 'Aaliyah P.',
     location: 'Atlanta, GA',
     rating: 5,
     date: 'Nov 15, 2025',
-    title: 'My inflammation is actually manageable now',
-    body: "I have lupus and inflammation is a constant battle. My rheumatologist suggested cold therapy and I was skeptical. Three weeks in — genuinely the best I've felt in two years. This thing changed my life.",
+    title: 'My inflammation is actually manageable',
+    body: "I have lupus. My rheumatologist suggested cold therapy and I was skeptical. Three weeks in — genuinely the best I've felt in two years.",
     verified: true,
     tag: 'Marathon Runner',
+    initial: 'A',
   },
   {
     name: 'Chris V.',
@@ -68,466 +82,437 @@ const reviews = [
     rating: 5,
     date: 'Oct 30, 2025',
     title: "6'3\", 225lbs — fits perfectly",
-    body: "I was the guy who kept not buying because I thought it wouldn't fit. It fits. Easily. The walls don't bow, there are no leaks after 45+ uses, and it packs down smaller than a carry-on. No excuses left.",
+    body: "Was the guy who kept not buying because I thought it wouldn't fit. It fits easily. No leaks after 45+ uses. No excuses left.",
     verified: true,
     tag: 'BJJ Black Belt',
+    initial: 'C',
   },
 ];
 
 const faqs = [
-  {
-    q: 'How cold does it actually get?',
-    a: 'With ice, you can hit 39–50°F (4–10°C) — the scientifically validated range for cold therapy. The insulated walls keep water at temp for 2+ hours without adding more ice.',
-  },
-  {
-    q: 'How fast is setup, really?',
-    a: 'Under 60 seconds. No inflation, no tools, no assembly. Unfold, fill, plunge. We timed it — average first-time user takes 47 seconds.',
-  },
-  {
-    q: "I'm 6'4\". Will I actually fit?",
-    a: 'Yes. Designed for athletes up to 6\'5" and 300 lbs. The 32" diameter and 28" depth accommodate larger frames comfortably in a seated position.',
-  },
-  {
-    q: 'How much ice do I need?',
-    a: 'For 50°F: 30–40 lbs. For an aggressive 39°F plunge: 60–70 lbs. Standard bags from any grocery or convenience store work perfectly.',
-  },
-  {
-    q: 'Can I leave it outside?',
-    a: 'Yes — UV-resistant outer shell handles full sun. Garage, backyard, poolside, rooftop. Some customers even travel with it.',
-  },
-  {
-    q: "What if I don't feel a difference?",
-    a: '30-day full refund. No forms, no photos, no questions. Email us and we handle it same day. We\'ve processed 847 orders and issued 12 refunds.',
-  },
-  {
-    q: 'How soon will I notice results?',
-    a: 'Most users report better sleep after session one. Measurable reduction in DOMS (delayed onset muscle soreness) within the first week of 3–4x/week use.',
-  },
+  { q: 'How cold does it get?', a: 'With ice, 39–50°F (4–10°C). The insulated walls hold temperature for 2+ hours without adding more ice.' },
+  { q: 'How fast is setup?', a: 'Under 60 seconds. No inflation, no tools. Unfold, fill, plunge. Average first-time user: 47 seconds.' },
+  { q: "Will I fit? I'm 6'4\".", a: "Yes. Fits athletes up to 6'5\" and 300 lbs. 32\" diameter, 28\" depth — designed for larger frames." },
+  { q: 'How much ice do I need?', a: 'For 50°F: 30–40 lbs. For 39°F: 60–70 lbs. Any grocery store bag works.' },
+  { q: 'Can it stay outside?', a: 'Yes — UV-resistant shell handles full sun. Garage, backyard, rooftop. Customers travel with it.' },
+  { q: "What if I don't feel a difference?", a: '30-day full refund. No forms, no photos. Email us and we handle it same day.' },
+];
+
+const specs = [
+  ['Dimensions', '32" diameter × 28" deep'],
+  ['Capacity', 'Up to 300 lbs / 6\'5"'],
+  ['Temperature Range', '39°F – ambient'],
+  ['Hold Time', '2+ hours with ice'],
+  ['Setup Time', '< 60 seconds'],
+  ['Material', 'Military-spec insulated PVC'],
+  ['Drain', 'Valve included, drains in 2 min'],
+  ['UV Resistance', 'Full outdoor rated'],
+  ['Weight', '8.5 lbs packed'],
+  ['Warranty', '1 year full coverage'],
 ];
 
 export default function StorePage() {
   const [qty, setQty] = useState(1);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [activeImg, setActiveImg] = useState(0);
+  const [imgError, setImgError] = useState<boolean[]>([false, false, false, false]);
   const { addItem } = useCartStore();
   const productRef = useRef<HTMLDivElement>(null);
 
   const handleAddToCart = () => {
     for (let i = 0; i < qty; i++) {
-      addItem({ productId: PRODUCT_ID, name: 'APEX Cold Plunge Pro', price: PRICE, image: '🧊' });
+      addItem({ productId: PRODUCT_ID, name: 'APEX Cold Plunge Pro', price: PRICE, image: PRODUCT_IMAGES[0] });
     }
   };
 
+  const handleImgError = (i: number) => {
+    const next = [...imgError];
+    next[i] = true;
+    setImgError(next);
+  };
+
   return (
-    <div className="text-white overflow-x-hidden">
+    <div className="bg-[#060910] text-white overflow-x-hidden">
 
-      {/* ─── HERO ─── */}
-      <section className="relative min-h-[92vh] flex items-center">
-        {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#080c12] via-[#0a1628] to-[#080c12]" />
-        <div className="absolute inset-0 opacity-30"
-          style={{ backgroundImage: 'radial-gradient(circle at 70% 50%, #39FF1415 0%, transparent 60%), radial-gradient(circle at 20% 80%, #00d4ff10 0%, transparent 50%)' }}
-        />
-        {/* Grid texture */}
-        <div className="absolute inset-0 opacity-5"
-          style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '60px 60px' }}
-        />
+      {/* ── HERO ── */}
+      <section className="relative min-h-screen flex items-center">
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-b from-[#060910] via-transparent to-[#060910] z-10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#060910] via-[#060910]/80 to-transparent z-10" />
+          {!imgError[0] ? (
+            <img
+              src={PRODUCT_IMAGES[2]}
+              alt="Cold plunge"
+              className="w-full h-full object-cover object-center opacity-40"
+              onError={() => handleImgError(0)}
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-[#0a1628] to-[#060910]" />
+          )}
+        </div>
 
-        <div className="relative max-w-6xl mx-auto px-4 py-20 grid lg:grid-cols-2 gap-16 items-center w-full">
-          {/* Left */}
-          <div className="space-y-8">
-            <div className="inline-flex items-center gap-2 border border-[#39FF14]/30 bg-[#39FF14]/5 rounded-full px-4 py-1.5 text-xs font-semibold text-[#39FF14] tracking-widest uppercase">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#39FF14] animate-pulse" />
-              Trusted by 10,000+ Athletes
+        <div className="relative z-20 max-w-6xl mx-auto px-6 py-32 w-full">
+          <div className="max-w-2xl space-y-8">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-0.5">
+                {[...Array(5)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
+              </div>
+              <span className="text-white/50 text-sm">4.9 · 2,847 reviews</span>
             </div>
 
-            <div className="space-y-4">
-              <h1 className="text-5xl md:text-7xl font-black leading-[0.9] tracking-tight">
+            <div className="space-y-3">
+              <p className="text-[#4FC3F7] text-xs font-bold tracking-[0.3em] uppercase">APEX Cold Plunge Pro</p>
+              <h1 className="text-6xl md:text-8xl font-black leading-[0.88] tracking-tight">
                 RECOVER
                 <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#39FF14] to-[#00d4ff]">
-                  FASTER.
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-[#4FC3F7]">
+                  LIKE A
                 </span>
                 <br />
-                PERFORM
-                <br />
-                LONGER.
+                CHAMPION.
               </h1>
-              <p className="text-lg text-white/60 max-w-md leading-relaxed">
-                The portable ice bath built for athletes who train hard and can&apos;t afford slow recovery. Setup in 60 seconds. Results from session one.
-              </p>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="flex -space-x-2">
-                {['M', 'J', 'R', 'D', 'A'].map((l, i) => (
-                  <div key={i} className="w-8 h-8 rounded-full border-2 border-[#080c12] bg-gradient-to-br from-[#39FF14]/30 to-cyan-500/30 flex items-center justify-center text-xs font-bold text-white">
-                    {l}
-                  </div>
-                ))}
-              </div>
-              <div>
-                <div className="flex gap-0.5">
-                  {[...Array(5)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />)}
-                </div>
-                <span className="text-xs text-white/50">4.9/5 from 2,847 reviews</span>
-              </div>
+            <p className="text-white/60 text-lg leading-relaxed max-w-lg">
+              The portable ice bath that pro fighters, elite coaches, and serious athletes use to train harder, recover faster, and perform longer.
+            </p>
+
+            <div className="flex items-baseline gap-4">
+              <span className="text-5xl font-black">${(PRICE / 100).toFixed(0)}</span>
+              <span className="text-2xl text-white/30 line-through">${(COMPARE_PRICE / 100).toFixed(0)}</span>
+              <span className="bg-red-500 text-white text-xs font-black px-2.5 py-1 rounded-full">SAVE $150</span>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 max-w-md">
               <button
                 onClick={() => productRef.current?.scrollIntoView({ behavior: 'smooth' })}
-                className="group flex items-center justify-center gap-2 bg-[#39FF14] hover:bg-[#2acc10] text-black font-black px-8 py-4 rounded-xl text-lg transition-all hover:scale-105 active:scale-95"
+                className="flex-1 bg-white text-black font-black py-4 px-8 rounded-xl text-lg hover:bg-[#4FC3F7] transition-colors"
               >
-                Shop Now
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                Order Now
               </button>
               <button
                 onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
-                className="flex items-center justify-center gap-2 border border-white/20 hover:border-white/40 text-white font-semibold px-8 py-4 rounded-xl text-sm transition-all"
+                className="flex-1 border border-white/20 text-white font-semibold py-4 px-8 rounded-xl hover:border-white/50 transition-colors text-sm"
               >
-                Read Reviews
+                See Reviews
               </button>
             </div>
 
-            <div className="flex flex-wrap gap-4 pt-2">
-              {['Free Shipping', '30-Day Returns', '1-Year Warranty', 'Same-Day Support'].map((b) => (
-                <span key={b} className="flex items-center gap-1.5 text-xs text-white/50">
-                  <Check className="w-3 h-3 text-[#39FF14]" />
-                  {b}
+            <div className="flex flex-wrap gap-5 pt-2">
+              {[
+                [Truck, 'Free Shipping'],
+                [RotateCcw, '30-Day Returns'],
+                [Shield, '1-Year Warranty'],
+              ].map(([Icon, label]) => (
+                <span key={label as string} className="flex items-center gap-2 text-xs text-white/40">
+                  <Icon className="w-3.5 h-3.5 text-[#4FC3F7]" />
+                  {label as string}
                 </span>
               ))}
             </div>
           </div>
-
-          {/* Right — Product Visual */}
-          <div className="relative">
-            <div className="relative aspect-square max-w-lg mx-auto">
-              {/* Glow */}
-              <div className="absolute inset-0 bg-gradient-to-br from-[#39FF14]/10 to-cyan-500/10 rounded-3xl blur-2xl scale-110" />
-              {/* Main product card */}
-              <div className="relative h-full rounded-3xl bg-gradient-to-br from-[#0d1f3c] to-[#0a1628] border border-white/10 overflow-hidden flex flex-col items-center justify-center gap-6 p-8">
-                <div className="text-[9rem] leading-none select-none drop-shadow-2xl">🧊</div>
-                <div className="text-center space-y-1">
-                  <div className="text-white font-black text-2xl tracking-tight">APEX Cold Plunge Pro</div>
-                  <div className="text-[#39FF14]/70 font-mono text-xs tracking-widest">PROFESSIONAL GRADE</div>
-                </div>
-                {/* Stats row */}
-                <div className="w-full grid grid-cols-3 gap-2 text-center">
-                  {[['60s', 'Setup'], ['39°F', 'Min Temp'], ['2hr+', 'Hold Time']].map(([val, label]) => (
-                    <div key={label} className="bg-white/5 rounded-xl py-2.5">
-                      <div className="text-[#39FF14] font-black text-lg leading-none">{val}</div>
-                      <div className="text-white/40 text-xs mt-1">{label}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {/* Floating badge */}
-              <div className="absolute -top-3 -right-3 bg-red-500 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-lg shadow-red-500/30 rotate-3">
-                SAVE $150
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/30 text-xs animate-bounce">
-          <span>Scroll</span>
-          <ChevronDown className="w-4 h-4" />
         </div>
       </section>
 
-      {/* ─── SOCIAL PROOF BAR ─── */}
-      <div className="border-y border-white/10 bg-white/[0.02] py-5 overflow-hidden">
-        <div className="max-w-6xl mx-auto px-4 flex flex-wrap items-center justify-center gap-x-10 gap-y-3 text-sm">
-          <span className="text-white/30 text-xs uppercase tracking-widest font-semibold hidden md:block">Used by athletes at</span>
-          {['UFC Performance Institute', 'Gracie Barra', 'American Kickboxing Academy', 'Tiger Muay Thai', 'Onnit Academy'].map((org) => (
-            <span key={org} className="text-white/50 font-medium">{org}</span>
+      {/* ── SOCIAL PROOF BAR ── */}
+      <div className="border-y border-white/[0.06] bg-white/[0.015]">
+        <div className="max-w-6xl mx-auto px-6 py-5 flex flex-wrap items-center justify-center gap-8 text-sm">
+          <span className="text-white/25 text-xs uppercase tracking-[0.2em] font-semibold hidden md:block">Trusted by athletes at</span>
+          {['UFC Performance Institute', 'Gracie Barra', 'AKA', 'Tiger Muay Thai', 'Onnit'].map((org) => (
+            <span key={org} className="text-white/40 font-medium">{org}</span>
           ))}
         </div>
       </div>
 
-      {/* ─── SCIENCE CALLOUT ─── */}
-      <section className="max-w-6xl mx-auto px-4 py-20">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
-            <div className="text-[#39FF14] text-xs font-bold tracking-widest uppercase">The Science</div>
-            <h2 className="text-4xl font-black leading-tight">
-              3 minutes changes your biology. Not a marketing claim.
-            </h2>
-            <p className="text-white/60 leading-relaxed">
-              Cold water immersion at 50°F for 3 minutes triggers a 250% increase in dopamine that lasts for hours, reduces inflammatory markers by up to 40%, and activates brown adipose tissue that accelerates metabolism. This isn&apos;t a wellness trend — it&apos;s the recovery protocol used by professional athletes, published in peer-reviewed journals, and popularized by researchers like Dr. Andrew Huberman.
-            </p>
-            <div className="grid grid-cols-2 gap-4">
+      {/* ── STATS STRIP ── */}
+      <div className="max-w-6xl mx-auto px-6 py-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/[0.06] rounded-2xl overflow-hidden">
+          {[
+            { n: '250%', l: 'Dopamine boost', s: 'Post-plunge, lasting hours' },
+            { n: '40%', l: 'Less inflammation', s: 'After 3x/week use' },
+            { n: '50%', l: 'Faster recovery', s: 'Reduced DOMS' },
+            { n: '10k+', l: 'Athletes served', s: 'And counting' },
+          ].map(({ n, l, s }) => (
+            <div key={l} className="bg-[#060910] px-6 py-10 text-center space-y-1">
+              <div className="text-4xl font-black text-white">{n}</div>
+              <div className="text-white/80 text-sm font-semibold">{l}</div>
+              <div className="text-white/30 text-xs">{s}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── PRODUCT SECTION ── */}
+      <section ref={productRef} id="product" className="max-w-6xl mx-auto px-6 py-12">
+        <div className="grid lg:grid-cols-[1fr_480px] gap-16 items-start">
+
+          {/* Images */}
+          <div className="space-y-3 lg:sticky lg:top-24">
+            <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-[#0d1a2e]">
+              {!imgError[activeImg] ? (
+                <img
+                  src={PRODUCT_IMAGES[activeImg]}
+                  alt="APEX Cold Plunge Pro"
+                  className="w-full h-full object-cover"
+                  onError={() => handleImgError(activeImg)}
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#0d1a2e] to-[#060910]">
+                  <div className="w-32 h-32 rounded-full bg-[#4FC3F7]/10 border border-[#4FC3F7]/20 flex items-center justify-center">
+                    <span className="text-5xl">❄️</span>
+                  </div>
+                  <p className="text-white/30 text-xs text-center max-w-xs">Add your product photos from<br />your CJDropshipping supplier</p>
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {PRODUCT_IMAGES.map((src, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveImg(i)}
+                  className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${activeImg === i ? 'border-[#4FC3F7]' : 'border-white/10 hover:border-white/30'}`}
+                >
+                  {!imgError[i] ? (
+                    <img src={src} alt="" className="w-full h-full object-cover" onError={() => handleImgError(i)} />
+                  ) : (
+                    <div className="w-full h-full bg-[#0d1a2e] flex items-center justify-center text-lg">❄️</div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Purchase Box */}
+          <div className="space-y-7">
+            <div className="space-y-2">
+              <p className="text-[#4FC3F7] text-xs font-bold tracking-widest uppercase">APEX Cold Plunge</p>
+              <h2 className="text-3xl font-black tracking-tight">Cold Plunge Pro</h2>
+              <div className="flex items-center gap-2">
+                <div className="flex gap-0.5">
+                  {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
+                </div>
+                <span className="text-white/40 text-sm">2,847 verified reviews</span>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-baseline gap-3">
+                <span className="text-4xl font-black">${(PRICE / 100).toFixed(0)}</span>
+                <span className="text-xl text-white/25 line-through">${(COMPARE_PRICE / 100).toFixed(0)}</span>
+                <span className="text-red-400 text-sm font-bold">37% OFF</span>
+              </div>
+              <p className="text-white/30 text-xs">Free US shipping · Arrives in 3–5 days</p>
+            </div>
+
+            {/* Countdown */}
+            <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+              <Zap className="w-4 h-4 text-red-400 shrink-0" />
+              <div className="flex-1">
+                <p className="text-red-400 text-xs font-bold uppercase tracking-wider mb-1">Sale ends in</p>
+                <CountdownTimer hours={18} />
+              </div>
+            </div>
+
+            <ScarcityBar stock={47} total={200} />
+
+            {/* Qty + CTA */}
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center border border-white/15 rounded-xl overflow-hidden bg-white/5">
+                  <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-4 py-3.5 hover:bg-white/10 transition-colors">
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="px-5 font-bold min-w-[2.5rem] text-center">{qty}</span>
+                  <button onClick={() => setQty(Math.min(5, qty + 1))} className="px-4 py-3.5 hover:bg-white/10 transition-colors">
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+                <button
+                  onClick={handleAddToCart}
+                  className="flex-1 bg-white hover:bg-[#4FC3F7] text-black font-black py-4 rounded-xl text-base transition-colors"
+                >
+                  Add to Cart — ${((PRICE * qty) / 100).toFixed(0)}
+                </button>
+              </div>
+              <Link
+                href="/store/cart"
+                onClick={handleAddToCart}
+                className="block w-full border border-white/15 hover:border-white/40 text-white font-semibold py-3.5 rounded-xl text-center text-sm transition-colors"
+              >
+                Buy Now → Skip to Checkout
+              </Link>
+            </div>
+
+            {/* Feature checklist */}
+            <div className="border-t border-white/[0.07] pt-6 space-y-2.5">
               {[
-                { stat: '250%', label: 'Dopamine increase', sub: 'Lasts 2–3 hours post-plunge' },
-                { stat: '40%', label: 'Inflammation reduction', sub: 'After consistent 3x/week use' },
-                { stat: '50%', label: 'Faster DOMS recovery', sub: 'Delayed onset muscle soreness' },
-                { stat: '11%', label: 'Metabolic boost', sub: 'Brown fat activation' },
-              ].map(({ stat, label, sub }) => (
-                <div key={label} className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-1">
-                  <div className="text-3xl font-black text-[#39FF14]">{stat}</div>
-                  <div className="text-white font-semibold text-sm">{label}</div>
-                  <div className="text-white/40 text-xs">{sub}</div>
+                "Fits up to 6'5\" and 300 lbs",
+                "Holds 39–50°F for 2+ hours",
+                "60-second setup, no tools",
+                "Military-spec insulated walls",
+                "UV-resistant for outdoor use",
+                "Packs to carry-on size",
+              ].map((f) => (
+                <div key={f} className="flex items-center gap-3 text-sm text-white/60">
+                  <Check className="w-4 h-4 text-[#4FC3F7] shrink-0" />
+                  {f}
+                </div>
+              ))}
+            </div>
+
+            {/* Trust badges */}
+            <div className="grid grid-cols-3 gap-2 border-t border-white/[0.07] pt-6">
+              {[
+                [Shield, '1-Year', 'Warranty'],
+                [RotateCcw, '30-Day', 'Free Returns'],
+                [Truck, 'Free', 'US Shipping'],
+              ].map(([Icon, top, bot]) => (
+                <div key={top as string} className="flex flex-col items-center gap-1.5 text-center p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                  <Icon className="w-4 h-4 text-[#4FC3F7]" />
+                  <span className="text-white text-xs font-bold leading-none">{top as string}</span>
+                  <span className="text-white/30 text-[10px] leading-none">{bot as string}</span>
                 </div>
               ))}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+        </div>
+      </section>
+
+      {/* ── SPECS ── */}
+      <section className="max-w-6xl mx-auto px-6 py-20">
+        <div className="grid md:grid-cols-2 gap-16 items-center">
+          <div className="space-y-5">
+            <p className="text-[#4FC3F7] text-xs font-bold tracking-[0.3em] uppercase">Specs</p>
+            <h2 className="text-4xl font-black leading-tight">Built for athletes.<br />Not for show.</h2>
+            <p className="text-white/50 leading-relaxed">Every measurement, material, and design decision was made for one purpose — to let you plunge harder, more often, anywhere.</p>
+          </div>
+          <div className="divide-y divide-white/[0.06]">
+            {specs.map(([key, val]) => (
+              <div key={key} className="flex justify-between items-center py-3.5">
+                <span className="text-white/40 text-sm">{key}</span>
+                <span className="text-white text-sm font-semibold">{val}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ── */}
+      <section className="border-y border-white/[0.06] bg-white/[0.015] py-20">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-14 space-y-3">
+            <p className="text-[#4FC3F7] text-xs font-bold tracking-[0.3em] uppercase">Process</p>
+            <h2 className="text-4xl font-black">Cold in 60 seconds.</h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
             {[
-              { icon: '⚡', title: 'Instant Recovery', desc: 'Walk in sore. Walk out ready for tomorrow.' },
-              { icon: '🧠', title: 'Mental Edge', desc: 'Dopamine surge trains mental toughness like nothing else.' },
-              { icon: '😴', title: 'Sleep Like a Pro', desc: 'Core temp regulation = deeper, longer sleep cycles.' },
-              { icon: '🔥', title: 'Burn More', desc: 'Shivering burns calories. Brown fat stays activated for hours.' },
-            ].map(({ icon, title, desc }) => (
-              <div key={title} className="bg-gradient-to-br from-[#0d1f3c] to-[#080c12] border border-white/10 rounded-2xl p-5 space-y-3 hover:border-[#39FF14]/30 transition-colors">
-                <div className="text-3xl">{icon}</div>
-                <div className="font-bold text-white text-sm">{title}</div>
-                <p className="text-white/50 text-xs leading-relaxed">{desc}</p>
+              { n: '01', t: 'Unfold', d: 'Self-supporting structure. No frame, no stakes, no inflation. Drop it anywhere in 10 seconds.' },
+              { n: '02', t: 'Fill + Ice', d: '30–70 lbs of ice from any store. Cold tap water. Ready in minutes.' },
+              { n: '03', t: 'Plunge', d: '2–5 minutes. The science says 11 minutes/week is optimal. Results from day one.' },
+            ].map(({ n, t, d }) => (
+              <div key={n} className="relative p-8 rounded-2xl border border-white/[0.07] hover:border-[#4FC3F7]/30 transition-colors bg-white/[0.02]">
+                <div className="text-7xl font-black text-white/[0.04] leading-none mb-5">{n}</div>
+                <div className="text-xl font-bold mb-2">{t}</div>
+                <p className="text-white/40 text-sm leading-relaxed">{d}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ─── PRODUCT SECTION ─── */}
-      <section ref={productRef} id="product" className="bg-gradient-to-b from-transparent to-[#0a1628]/50 border-t border-white/10 py-20">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-16 items-start">
-            {/* Images */}
-            <div className="space-y-3 lg:sticky lg:top-20">
-              <div className="aspect-square rounded-3xl bg-gradient-to-br from-[#0d1f3c] to-[#060e1a] border border-white/10 flex flex-col items-center justify-center gap-4 overflow-hidden relative">
-                <div className="text-[12rem] leading-none select-none">🧊</div>
-                <div className="absolute bottom-6 left-6 right-6">
-                  <div className="bg-black/60 backdrop-blur rounded-xl px-4 py-3 flex items-center justify-between">
-                    <span className="text-white/60 text-xs">APEX Cold Plunge Pro</span>
-                    <span className="text-[#39FF14] font-mono font-bold text-sm">PRO-GRADE</span>
-                  </div>
-                </div>
+      {/* ── REVIEWS ── */}
+      <section id="reviews" className="max-w-6xl mx-auto px-6 py-20">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+          <div className="space-y-2">
+            <p className="text-[#4FC3F7] text-xs font-bold tracking-[0.3em] uppercase">Reviews</p>
+            <h2 className="text-4xl font-black">Real athletes.<br />Real results.</h2>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="text-6xl font-black text-white leading-none">4.9</div>
+            <div>
+              <div className="flex gap-0.5 mb-1">
+                {[...Array(5)].map((_, i) => <Star key={i} className="w-5 h-5 fill-amber-400 text-amber-400" />)}
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  ['Setup', '60 sec', '⏱'],
-                  ['Capacity', '300 lbs', '💪'],
-                  ['Hold Temp', '2+ hrs', '❄️'],
-                ].map(([label, val, icon]) => (
-                  <div key={label} className="aspect-square bg-[#0d1f3c] border border-white/10 rounded-2xl flex flex-col items-center justify-center gap-1 hover:border-[#39FF14]/30 transition-colors cursor-pointer">
-                    <span className="text-2xl">{icon}</span>
-                    <span className="text-[#39FF14] font-black text-sm">{val}</span>
-                    <span className="text-white/40 text-xs">{label}</span>
-                  </div>
-                ))}
-              </div>
+              <div className="text-white/30 text-xs">2,847 verified purchases</div>
             </div>
+          </div>
+        </div>
 
-            {/* Purchase box */}
-            <div className="space-y-8">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-0.5">
-                    {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />)}
-                  </div>
-                  <span className="text-white/50 text-sm">2,847 verified reviews</span>
-                </div>
-                <h2 className="text-4xl font-black tracking-tight">APEX Cold Plunge Pro</h2>
-                <p className="text-white/60 leading-relaxed">
-                  Professional-grade portable ice bath. Military-spec insulated walls. Designed for daily use by serious athletes — not casual wellness seekers.
-                </p>
-              </div>
-
-              {/* Price */}
-              <div className="space-y-1">
-                <div className="flex items-baseline gap-3">
-                  <span className="text-5xl font-black text-white">${(PRICE / 100).toFixed(0)}</span>
-                  <span className="text-2xl text-white/30 line-through">${(COMPARE_PRICE / 100).toFixed(0)}</span>
-                  <span className="bg-red-500/20 text-red-400 border border-red-500/30 text-sm font-bold px-3 py-1 rounded-full">
-                    Save ${((COMPARE_PRICE - PRICE) / 100).toFixed(0)}
-                  </span>
-                </div>
-                <p className="text-white/40 text-sm">One-time purchase. No subscription. Ships within 48 hours.</p>
-              </div>
-
-              {/* Countdown */}
-              <div className="bg-red-950/30 border border-red-500/20 rounded-2xl p-4 space-y-2">
-                <div className="flex items-center gap-2 text-red-400 text-xs font-bold uppercase tracking-widest">
-                  <Zap className="w-3.5 h-3.5" />
-                  Sale price expires in
-                </div>
-                <CountdownTimer hours={18} />
-              </div>
-
-              <ScarcityBar stock={47} total={200} />
-
-              {/* Qty + CTA */}
-              <div className="space-y-3">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {reviews.map((r) => (
+            <div key={r.name} className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 space-y-4 hover:border-white/20 transition-colors">
+              <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center border border-white/20 rounded-xl overflow-hidden">
-                    <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-4 py-3 text-white hover:bg-white/10 transition-colors">
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <span className="px-5 py-3 font-bold text-white min-w-[3rem] text-center">{qty}</span>
-                    <button onClick={() => setQty(Math.min(5, qty + 1))} className="px-4 py-3 text-white hover:bg-white/10 transition-colors">
-                      <Plus className="w-4 h-4" />
-                    </button>
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4FC3F7]/30 to-[#0d1a2e] flex items-center justify-center font-black text-sm border border-white/10 shrink-0">
+                    {r.initial}
                   </div>
-                  <button
-                    onClick={handleAddToCart}
-                    className="flex-1 bg-[#39FF14] hover:bg-[#2acc10] text-black font-black py-4 rounded-xl text-lg transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-[#39FF14]/20"
-                  >
-                    Add to Cart — ${((PRICE * qty) / 100).toFixed(0)}
-                  </button>
+                  <div>
+                    <div className="font-semibold text-sm">{r.name}</div>
+                    <div className="text-white/30 text-xs">{r.location}</div>
+                  </div>
                 </div>
-                <Link
-                  href="/store/cart"
-                  onClick={handleAddToCart}
-                  className="block w-full border border-white/20 hover:border-white/40 text-white font-semibold py-4 rounded-xl text-center text-sm transition-all"
-                >
-                  Buy Now — Skip to Checkout
-                </Link>
+                <span className="text-[10px] bg-[#4FC3F7]/10 text-[#4FC3F7] border border-[#4FC3F7]/20 px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">
+                  {r.tag}
+                </span>
               </div>
-
-              {/* Feature list */}
-              <div className="border-t border-white/10 pt-6 grid grid-cols-1 gap-3">
-                {[
-                  'Fits athletes up to 6\'5" and 300 lbs',
-                  'Holds 39–50°F for 2+ hours with ice',
-                  'Sets up in 60 seconds — no tools needed',
-                  'Military-spec reinforced walls — zero flex under load',
-                  'UV-resistant exterior for outdoor use',
-                  'Packs down to carry-on size for travel',
-                  'Drain valve included — empties in 2 minutes',
-                ].map((f) => (
-                  <div key={f} className="flex items-center gap-3 text-sm text-white/70">
-                    <Check className="w-4 h-4 text-[#39FF14] shrink-0" />
-                    {f}
-                  </div>
-                ))}
+              <div className="flex gap-0.5">
+                {[...Array(r.rating)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── HOW IT WORKS ─── */}
-      <section className="max-w-6xl mx-auto px-4 py-20">
-        <div className="text-center mb-12 space-y-3">
-          <div className="text-[#39FF14] text-xs font-bold tracking-widest uppercase">Process</div>
-          <h2 className="text-4xl font-black">Cold in 60 seconds. Every time.</h2>
-        </div>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            { n: '01', title: 'Unfold anywhere', desc: 'Garage floor, backyard, bathroom. Self-supporting structure — no frame, no stakes, no inflation. Takes 10 seconds.' },
-            { n: '02', title: 'Fill with water + ice', desc: 'Cold tap water plus 30–70 lbs of ice depending on target temperature. Standard bags from any store.' },
-            { n: '03', title: 'Plunge 2–5 minutes', desc: 'The science says 11 minutes per week is optimal. Start at 2 minutes, build up. Your body adapts fast.' },
-          ].map(({ n, title, desc }) => (
-            <div key={n} className="relative group">
-              <div className="bg-gradient-to-br from-[#0d1f3c] to-[#080c12] border border-white/10 rounded-3xl p-8 h-full space-y-4 hover:border-[#39FF14]/20 transition-all">
-                <div className="text-6xl font-black text-white/5 group-hover:text-[#39FF14]/10 transition-colors leading-none">{n}</div>
-                <div className="text-xl font-bold text-white">{title}</div>
-                <p className="text-white/50 text-sm leading-relaxed">{desc}</p>
+              <p className="font-bold text-sm">{r.title}</p>
+              <p className="text-white/50 text-sm leading-relaxed">{r.body}</p>
+              <div className="flex items-center justify-between pt-1 border-t border-white/[0.06]">
+                <span className="text-white/25 text-xs">{r.date}</span>
+                {r.verified && (
+                  <span className="flex items-center gap-1 text-xs text-[#4FC3F7]/60">
+                    <Check className="w-3 h-3" /> Verified
+                  </span>
+                )}
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ─── REVIEWS ─── */}
-      <section id="reviews" className="bg-white/[0.02] border-y border-white/10 py-20">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
-            <div className="space-y-2">
-              <div className="text-[#39FF14] text-xs font-bold tracking-widest uppercase">Reviews</div>
-              <h2 className="text-4xl font-black">Real athletes. Real results.</h2>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="text-5xl font-black text-white">4.9</div>
-              <div className="space-y-1">
-                <div className="flex gap-0.5">
-                  {[...Array(5)].map((_, i) => <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />)}
-                </div>
-                <div className="text-white/40 text-xs">from 2,847 verified purchases</div>
-              </div>
-            </div>
+      {/* ── FAQ ── */}
+      <section id="faq" className="border-t border-white/[0.06] py-20">
+        <div className="max-w-2xl mx-auto px-6">
+          <div className="text-center mb-12 space-y-3">
+            <p className="text-[#4FC3F7] text-xs font-bold tracking-[0.3em] uppercase">FAQ</p>
+            <h2 className="text-4xl font-black">Every question.<br />Honest answers.</h2>
           </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {reviews.map((r) => (
-              <div key={r.name} className="bg-[#080c12] border border-white/10 rounded-2xl p-6 space-y-4 hover:border-white/20 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#39FF14]/20 to-cyan-500/20 flex items-center justify-center font-black text-white text-sm border border-white/10">
-                      {r.name[0]}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-white text-sm">{r.name}</div>
-                      <div className="text-white/30 text-xs">{r.location}</div>
-                    </div>
-                  </div>
-                  <span className="text-xs bg-[#39FF14]/10 text-[#39FF14] border border-[#39FF14]/20 px-2 py-0.5 rounded-full shrink-0">
-                    {r.tag}
-                  </span>
-                </div>
-                <div className="flex gap-0.5">
-                  {[...Array(r.rating)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />)}
-                </div>
-                <div className="font-bold text-white text-sm">{r.title}</div>
-                <p className="text-white/60 text-sm leading-relaxed">{r.body}</p>
-                <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                  <span className="text-white/30 text-xs">{r.date}</span>
-                  {r.verified && (
-                    <span className="flex items-center gap-1 text-xs text-[#39FF14]/60">
-                      <Check className="w-3 h-3" /> Verified Purchase
-                    </span>
-                  )}
-                </div>
+          <div className="divide-y divide-white/[0.06]">
+            {faqs.map(({ q, a }, i) => (
+              <div key={i}>
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full flex items-center justify-between py-5 text-left gap-4"
+                >
+                  <span className="font-semibold text-white">{q}</span>
+                  {openFaq === i
+                    ? <ChevronUp className="w-4 h-4 text-[#4FC3F7] shrink-0" />
+                    : <ChevronDown className="w-4 h-4 text-white/30 shrink-0" />
+                  }
+                </button>
+                {openFaq === i && (
+                  <div className="pb-5 text-white/50 text-sm leading-relaxed">{a}</div>
+                )}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ─── FAQ ─── */}
-      <section id="faq" className="max-w-3xl mx-auto px-4 py-20">
-        <div className="text-center mb-12 space-y-3">
-          <div className="text-[#39FF14] text-xs font-bold tracking-widest uppercase">FAQ</div>
-          <h2 className="text-4xl font-black">Every question. Honest answers.</h2>
-        </div>
-        <div className="space-y-2">
-          {faqs.map(({ q, a }, i) => (
-            <div key={i} className="border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-colors">
-              <button
-                onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                className="w-full flex items-center justify-between p-5 text-left gap-4"
-              >
-                <span className="font-semibold text-white">{q}</span>
-                {openFaq === i
-                  ? <ChevronUp className="w-4 h-4 text-[#39FF14] shrink-0" />
-                  : <ChevronDown className="w-4 h-4 text-white/40 shrink-0" />
-                }
-              </button>
-              {openFaq === i && (
-                <div className="px-5 pb-5 text-white/60 text-sm leading-relaxed border-t border-white/5 pt-4">
-                  {a}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ─── FINAL CTA ─── */}
-      <section className="max-w-6xl mx-auto px-4 pb-24">
-        <div className="relative rounded-3xl overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#39FF14]/10 via-[#0a1628] to-cyan-900/20" />
-          <div className="absolute inset-0 border border-[#39FF14]/20 rounded-3xl" />
-          <div className="relative px-8 md:px-16 py-16 text-center space-y-6">
-            <div className="text-6xl">🧊</div>
+      {/* ── FINAL CTA ── */}
+      <section className="max-w-6xl mx-auto px-6 pb-32">
+        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#0d1a2e] to-[#060910] border border-white/[0.07]">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[#4FC3F7]/5 rounded-full blur-3xl" />
+          <div className="relative px-8 md:px-16 py-16 text-center space-y-6 max-w-2xl mx-auto">
+            <p className="text-[#4FC3F7] text-xs font-bold tracking-[0.3em] uppercase">Limited Time</p>
             <h2 className="text-4xl md:text-5xl font-black leading-tight">
-              Stop losing to slow recovery.
-              <br />
-              <span className="text-[#39FF14]">Start winning with better biology.</span>
+              Stop losing to<br />slow recovery.
             </h2>
-            <p className="text-white/60 max-w-lg mx-auto">
-              Join 10,000+ athletes who made cold plunging their edge. Get 10% off your first order when you join the list.
+            <p className="text-white/40 leading-relaxed">
+              Join 10,000+ athletes. Get 10% off your first order when you join the list.
             </p>
             <form
               onSubmit={async (e) => {
@@ -539,7 +524,7 @@ export default function StorePage() {
                   body: JSON.stringify({ email, source: 'landing_footer' }),
                 });
                 (e.currentTarget as HTMLFormElement).reset();
-                alert('Done! Check your email for your 10% off code.');
+                alert('Check your email for your 10% off code.');
               }}
               className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
             >
@@ -548,31 +533,31 @@ export default function StorePage() {
                 type="email"
                 required
                 placeholder="your@email.com"
-                className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#39FF14] text-sm"
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder:text-white/20 focus:outline-none focus:border-[#4FC3F7] text-sm"
               />
               <button
                 type="submit"
-                className="bg-[#39FF14] hover:bg-[#2acc10] text-black font-black px-6 py-3 rounded-xl transition-colors whitespace-nowrap text-sm"
+                className="bg-white hover:bg-[#4FC3F7] text-black font-black px-6 py-3.5 rounded-xl transition-colors whitespace-nowrap text-sm"
               >
-                Get 10% Off →
+                Get 10% Off
               </button>
             </form>
-            <p className="text-white/20 text-xs">No spam. Discount sent instantly. Unsubscribe anytime.</p>
+            <p className="text-white/15 text-xs">No spam. Discount sent instantly.</p>
           </div>
         </div>
       </section>
 
-      {/* ─── STICKY MOBILE BAR ─── */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#080c12]/95 backdrop-blur border-t border-white/10 md:hidden z-40 space-y-2">
-        <div className="flex items-center justify-between text-xs text-white/50">
-          <span className="text-red-400 font-semibold">⚡ 47 units left</span>
-          <span>Free shipping on all orders</span>
+      {/* ── STICKY MOBILE BAR ── */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#060910]/95 backdrop-blur border-t border-white/10 md:hidden z-40">
+        <div className="flex items-center justify-between text-xs text-white/40 mb-2">
+          <span className="text-red-400 font-semibold">Only 47 units left</span>
+          <span>Free US shipping</span>
         </div>
         <button
           onClick={handleAddToCart}
-          className="w-full bg-[#39FF14] hover:bg-[#2acc10] text-black font-black py-4 rounded-xl text-lg transition-all active:scale-95"
+          className="w-full bg-white hover:bg-[#4FC3F7] text-black font-black py-4 rounded-xl text-base transition-colors"
         >
-          Add to Cart — $249 <span className="line-through text-black/40 text-base">$399</span>
+          Add to Cart — $249 <span className="line-through text-black/30 font-normal text-sm">$399</span>
         </button>
       </div>
     </div>
