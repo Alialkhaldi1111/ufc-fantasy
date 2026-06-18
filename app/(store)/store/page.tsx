@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Star, Check, Zap, ChevronDown, ChevronUp, Truck, RefreshCcw, Shield, Instagram, Plus, Minus } from 'lucide-react';
-import CountdownTimer from '@/components/store/CountdownTimer';
-import ScarcityBar from '@/components/store/ScarcityBar';
-import TrustBadges from '@/components/store/TrustBadges';
-import ReviewCard from '@/components/store/ReviewCard';
+import { Star, Check, Zap, ChevronDown, ChevronUp, ExternalLink, Plus, Minus } from 'lucide-react';
+import { CountdownTimer } from '@/components/store/CountdownTimer';
+import { ScarcityBar } from '@/components/store/ScarcityBar';
+import { TrustBadges } from '@/components/store/TrustBadges';
+import { ReviewCard } from '@/components/store/ReviewCard';
 import { useCartStore } from '@/store/useCartStore';
 
 const PRODUCT = {
@@ -120,7 +120,7 @@ export default function StoreLandingPage() {
   const { addItem } = useCartStore();
 
   const handleAddToCart = () => {
-    addItem({ id: PRODUCT.id, name: PRODUCT.name, price: PRODUCT.price, image: PRODUCT.image });
+    addItem({ productId: PRODUCT.id, name: PRODUCT.name, price: PRODUCT.price, image: PRODUCT.image });
   };
 
   const savings = PRODUCT.comparePrice - PRODUCT.price;
@@ -186,7 +186,7 @@ export default function StoreLandingPage() {
               <CountdownTimer hours={18} />
             </div>
 
-            <ScarcityBar total={100} remaining={47} />
+            <ScarcityBar stock={47} total={100} />
 
             <div className="flex items-center gap-3">
               <div className="flex items-center border border-white/20 rounded-xl overflow-hidden">
@@ -306,7 +306,7 @@ export default function StoreLandingPage() {
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {reviews.map((review) => (
-            <ReviewCard key={review.name} review={review} />
+            <ReviewCard key={review.name} {...review} />
           ))}
         </div>
       </section>
@@ -341,7 +341,7 @@ export default function StoreLandingPage() {
       {/* Instagram Grid */}
       <section className="max-w-6xl mx-auto px-4 py-16">
         <div className="flex items-center gap-3 mb-8">
-          <Instagram className="w-6 h-6 text-pink-500" />
+          <ExternalLink className="w-6 h-6 text-pink-500" />
           <h2 className="text-2xl font-black">Community <span className="text-[#39FF14]">@APEXColdPlunge</span></h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
